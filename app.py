@@ -39,7 +39,7 @@ scénario = st.sidebar.selectbox("Scénario d'investissement", ["Stagnation", "P
 budget_total = st.sidebar.number_input("Budget Total (Milliards GNF)", min_value=1, value=2500)
 
 st.sidebar.markdown("---")
-st.sidebar.info("Expertise : PhD INRAE\nCellule : UPDIA Vision\nGuinée 2040")
+st.sidebar.info("Auteur : Almamy Kalla BANGOURA : Economiste : Expertise : Data science et évaluation d'impact des politiques publiques")
 
 # --- EXTRACTION ET CALCULS DYNAMIQUES (Le nouveau bloc logique) ---
 if culture_select == "Tout":
@@ -442,6 +442,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
