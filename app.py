@@ -139,9 +139,9 @@ with tab4:
             title="Répartition de l'impact par levier",
             color='Levier',
             color_discrete_map={
-                'Semences': '#009460'  # Vert
+                'Semences': '#009460',  # Vert
                 'Engrais': '#fcd116',  # Jaune
-                'Machines': '#ce1126', # Rouge
+                'Machines': '#ce1126' # Rouge
             }
         )
         
@@ -149,3 +149,4 @@ with tab4:
 st.markdown("---")
 
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
+
