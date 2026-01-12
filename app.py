@@ -49,7 +49,8 @@ st.title(f"🇬🇳 SAD UPDIA : Pilotage de la filière {culture_select}")
 st.markdown(f"Analyse de souveraineté alimentaire basée sur les objectifs **Vision 2040**.")
 
 # --- 6. ONGLETS STRATÉGIQUES ---
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Diagnostic SNSA", "🤖 IA & Rendements", "🎯 Simulateur Vision 2040", "💰 Efficacité Budgétaire"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Diagnostic : Statistiques naltionales", "🤖 IA & Rendements : Résilience", "🎯 Simulateur Vision : Guinée 2040", "💰 Finance : Efficacité Budgétaire", "🏭 Transformation & Valeur Ajoutée"])
+
 
 with tab1:
     st.subheader(f"📊 Analyse Complète de la Production : {culture_select}")
@@ -359,6 +360,50 @@ with tab4:
     * **Impact Productif :** L'allocation actuelle permet de générer un surplus de **{int(gain_tonnes):,} tonnes**.
     * **Indépendance :** Cela représente une économie stratégique de **{economie_devises/1_000_000:.1f} millions de dollars** pour la Banque Centrale de Guinée.
     * **Recommandation :** Le levier 'Engrais' présente actuellement le meilleur ratio coût/bénéfice pour la filière **{culture_select}**.
+    """)
+
+with tab5:
+    st.subheader(f"🏭 Industrialisation & Réduction des Pertes : {culture_select}")
+    
+    col_t1, col_t2 = st.columns([1, 2])
+    
+    with col_t1:
+        st.write("**🏗️ Infrastructures de Stockage**")
+        taux_perte = st.slider("Taux de pertes post-récolte actuel (%)", 5, 50, 30)
+        
+        st.write("**⚙️ Capacité de Transformation**")
+        niveau_transfo = st.radio("Niveau d'industrialisation", 
+                                  ["Manuel (Faible)", "Artisanal (Moyen)", "Industriel (Élevé)"])
+        
+        # Logique de calcul du gain par la transformation
+        gain_efficience = {"Manuel (Faible)": 0.05, "Artisanal (Moyen)": 0.15, "Industriel (Élevé)": 0.30}[niveau_transfo]
+        
+        # Impact sur la disponibilité réelle
+        perte_tonnes = base_prod * (taux_perte / 100)
+        economie_perte = perte_tonnes * gain_efficience
+        
+        st.warning(f"Pertes actuelles : **{int(perte_tonnes):,} T**")
+        st.success(f"Gain par l'industrie : **+{int(economie_perte):,} T** récupérées")
+
+    with col_t2:
+        # Visualisation de la chaîne de valeur
+        st.write("**📦 Disponibilité Réelle après Pertes & Transformation**")
+        
+        labels = ['Production Champ', 'Pertes Post-Récolte', 'Disponible Consommation']
+        values = [base_prod, -perte_tonnes, base_prod - perte_tonnes]
+        
+        fig_valeur = px.waterfall(
+            name="Valeur", orientation="v",
+            x=labels, y=values,
+            connector={"line":{"color":"rgb(63, 63, 63)"}},
+            title=f"Flux de la filière {culture_select} (Champ -> Assiette)"
+        )
+        st.plotly_chart(fig_valeur, use_container_width=True)
+
+    st.write("---")
+    st.info(f"""
+    **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
+    la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
 
 
