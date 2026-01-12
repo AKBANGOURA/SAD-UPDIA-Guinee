@@ -68,74 +68,76 @@ with tab1:
     st.plotly_chart(fig_prod, use_container_width=True)
 
 with tab2:
-    st.subheader(f"Optimisation & Résilience Climatique : {culture_select}")
+    st.subheader(f"Optimisation Agro-Climatique : {culture_select}")
     
     col_a, col_b = st.columns([1, 2])
     
     with col_a:
+        st.write("**🌍 Caractéristiques du Terroir**")
+        # Le type de sol influence le boost de base et la rétention d'eau
+        type_sol = st.selectbox("Type de Sol", ["Alluvial (Fertile)", "Latéritique (Ferralitique)", "Sableux/Limoneux"], 
+                               help="Les sols alluviaux ont la meilleure réponse aux intrants.")
+        
         st.write("**⚙️ Configuration Technique**")
         intrants = st.select_slider("Niveau d'intensification", options=["Traditionnel", "Semi-Mécanisé", "Intensif"], key="ia_tech")
-        irrigation = st.checkbox("Irrigation Maîtrisée", help="Réduit la vulnérabilité au stress hydrique")
+        irrigation = st.checkbox("Irrigation Maîtrisée", help="Essentiel pour sécuriser le rendement sur sols sableux.")
         
         st.write("---")
         st.write("**☁️ Facteur Pluviométrique**")
-        meteo_actuelle = st.slider("Variation de la pluie (%)", -50, 50, 0, help="0% = Pluviométrie normale")
+        meteo_actuelle = st.slider("Variation de la pluie (%)", -50, 50, 0)
         
-        # LOGIQUE DE CALCUL DU BOOST
-        boost_base = {"Traditionnel": 1.0, "Semi-Mécanisé": 1.4, "Intensif": 1.8}[intrants]
+        # LOGIQUE DE CALCUL COMPLEXE (MULTI-PARAMÈTRES)
+        # 1. Facteur Sol
+        f_sol = {"Alluvial (Fertile)": 1.2, "Latéritique (Ferralitique)": 0.8, "Sableux/Limoneux": 0.9}[type_sol]
         
-        def calculer_rendement(v_pluie, irrig, b_base):
-            # L'irrigation apporte un bonus de 30% et protège des pertes
-            if irrig:
-                b_base += 0.3
+        # 2. Base Boost technique pondérée par le sol
+        boost_base = {"Traditionnel": 1.0, "Semi-Mécanisé": 1.4, "Intensif": 1.9}[intrants] * f_sol
+        
+        def calculer_rendement_complet(v_pluie, irrig, b_base, s_type):
+            if irrig: b_base += 0.3
             
             impact = v_pluie / 100
+            # Sensibilité à la sécheresse selon le sol
+            # Les sols sableux perdent plus vite leur eau que les sols alluviaux
+            sensibilite_sol = {"Alluvial (Fertile)": 1.0, "Latéritique (Ferralitique)": 1.3, "Sableux/Limoneux": 1.6}[s_type]
             
-            # Si sécheresse (v_pluie < 0)
             if v_pluie < 0:
                 if irrig:
-                    impact = impact / 3  # L'irrigation divise par 3 les pertes liées au manque d'eau
+                    impact = impact / 3
                 else:
-                    impact = impact * 1.2 # Sans irrigation, l'impact négatif est amplifié
+                    impact = impact * sensibilite_sol
             
             return max(0.1, b_base + impact)
 
-        # Calcul pour l'affichage immédiat
-        rendement_final = calculer_rendement(meteo_actuelle, irrigation, boost_base)
+        rendement_final = calculer_rendement_complet(meteo_actuelle, irrigation, boost_base, type_sol)
         prod_simulee = base_prod * rendement_final
 
         st.metric(f"Production {culture_select}", f"{int(prod_simulee):,} T", 
                   f"{int((rendement_final-1)*100)}% vs Actuel")
 
-        # --- GESTION DES ALERTES CRITIQUES (Ce que tu as soulevé) ---
-        if meteo_actuelle < -20:
-            if not irrigation:
-                st.error(f"🚨 **ALERTE SÉCHERESSE** : Sans irrigation, la production de {culture_select} s'effondre malgré l'utilisation d'intrants. Risque de famine locale.")
-            else:
-                st.warning(f"⚠️ **STRESS HYDRIQUE** : L'irrigation limite les pertes, mais la production subit une baisse de rendement.")
-        elif meteo_actuelle > 30:
-            st.error(f"🌊 **RISQUE D'INONDATION** : Un excès de pluie (>30%) risque de lessiver les sols et détruire les récoltes de {culture_select}.")
+        # --- GESTION DES ALERTES ---
+        if meteo_actuelle < -20 and not irrigation:
+            st.error(f"🚨 **ALERTE SÉCHERESSE** : Sur sol {type_sol}, la production de {culture_select} s'effondre sans irrigation.")
+        
+        if type_sol == "Latéritique (Ferralitique)" and intrants == "Intensif":
+            st.warning("⚠️ **RISQUE D'ACIDIFICATION** : L'usage intensif d'engrais sur sol ferralitique nécessite un amendement calcaire.")
 
     with col_b:
-        # 1. Graphique de Comparaison Simple
-        fig_comp = px.bar(x=['Actuel', 'Simulé'], y=[base_prod, prod_simulee], 
-                          color=['Actuel', 'Simulé'], 
-                          color_discrete_map={'Actuel': '#fcd116', 'Simulé': '#009460' if prod_simulee >= base_prod else '#ce1126'},
-                          title="Impact Immédiat sur la Campagne")
-        st.plotly_chart(fig_comp, use_container_width=True)
-
-        # 2. Graphique de Sensibilité (Courbe de réponse)
+        # 1. Graphique de Sensibilité
         pluie_range = np.linspace(-50, 50, 21)
-        rendements_courbe = [base_prod * calculer_rendement(p, irrigation, boost_base) for p in pluie_range]
+        rendements_courbe = [base_prod * calculer_rendement_complet(p, irrigation, boost_base, type_sol) for p in pluie_range]
         
         df_sens = pd.DataFrame({'Pluie (%)': pluie_range, 'Production (T)': rendements_courbe})
         fig_sens = px.line(df_sens, x='Pluie (%)', y='Production (T)', 
-                           title=f"Résilience de la filière {culture_select} aux variations d'eau",
+                           title=f"Résilience du {culture_select} sur Sol {type_sol}",
                            markers=True)
-        fig_sens.add_vline(x=meteo_actuelle, line_dash="dot", line_color="red", annotation_text="Point actuel")
-        fig_sens.add_hline(y=base_prod, line_dash="dash", line_color="orange")
+        fig_sens.add_vline(x=meteo_actuelle, line_dash="dot", line_color="red", annotation_text="Position actuelle")
+        fig_sens.add_hline(y=base_prod, line_dash="dash", line_color="orange", annotation_text="Production de référence")
         
+        fig_sens.update_layout(plot_bgcolor='white')
         st.plotly_chart(fig_sens, use_container_width=True)
+
+    st.success(f"**Analyse Pédologique :** Le sol **{type_sol}** influence la rétention d'eau et l'efficacité des intrants de plus ou moins **{int(abs(f_sol-1)*100)}%**.")
 with tab3:
     st.subheader(f"Trajectoire de Souveraineté 2026-2040 : {culture_select}")
     tx_croissance = st.slider("Taux de croissance annuel visé (%)", 1, 15, 6)
@@ -198,6 +200,7 @@ with tab4:
 st.markdown("---")
 
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
+
 
 
 
