@@ -52,50 +52,73 @@ st.markdown(f"Analyse de souveraineté alimentaire basée sur les objectifs **Vi
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Diagnostic SNSA", "🤖 IA & Rendements", "🎯 Simulateur Vision 2040", "💰 Efficacité Budgétaire"])
 
 with tab1:
-    st.subheader(f"📊 Analyse de la Production : {culture_select}")
+    st.subheader(f"📊 Analyse Complète de la Production : {culture_select}")
     
-    # --- 1. TES INDICATEURS DE BASE (Améliorés) ---
+    # --- SECTION A : TES MÉTRIQUES D'ORIGINE (Tous les indicateurs) ---
     m1, m2, m3 = st.columns(3)
+    # On utilise d['obj_2040'] pour que ça change avec la culture choisie
     m1.metric(f"Production {culture_select}", f"{base_prod:,} T", "+4.2%")
     m2.metric("Objectif National", f"{d['obj_2040']:,} T", "Cible 2040")
     
-    # Calcul dynamique du Besoin Importé (ton indicateur d'origine)
-    besoin_import_calc = int((d['ratio_besoin']-1)*100)
+    # Calcul dynamique du besoin importé (Basé sur ton ratio_besoin)
+    besoin_import_calc = int((d['ratio_besoin'] - 1) * 100)
     m3.metric("Besoin Importé", f"{besoin_import_calc}%", "-2.1%")
 
     st.write("---")
 
-    # --- 2. ANALYSE AVANCÉE (PhD Level) ---
-    col_a, col_b = st.columns([1, 1])
+    # --- SECTION B : ANALYSE DES RENDEMENTS & GAP (Nouveaux indicateurs PhD) ---
+    col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
     
-    with col_a:
-        # Rendement et Gap
-        rendement_moyen = base_prod / 800000 
-        st.write(f"**Performance Agronomique**")
-        st.write(f"Rendement moyen actuel : **{rendement_moyen:.2f} T/Ha**")
-        
-        # Graphique de répartition régionale (ton code d'origine)
+    # Calcul du rendement moyen (Production / Ha estimé)
+    rendement_moyen = base_prod / 800000 
+    objectif_rendement = d['obj_2040'] / 800000
+    gap_rendement = ((objectif_rendement - rendement_moyen) / rendement_moyen) * 100
+    
+    col_kpi1.metric("Rendement Actuel", f"{rendement_moyen:.2f} T/Ha")
+    col_kpi2.metric("Yield Gap (Écart)", f"{gap_rendement:.1f}%", delta=f"{objectif_rendement:.2f} visé", delta_color="inverse")
+    col_kpi3.metric("Souveraineté Actuelle", f"{(1/d['ratio_besoin'])*100:.1f}%")
+
+    st.write("---")
+
+    # --- SECTION C : VISUALISATION (Fusion des deux types de graphiques) ---
+    c_left, c_right = st.columns(2)
+    
+    with c_left:
+        # TON GRAPHIQUE RÉGIONAL D'ORIGINE
+        st.write("**📍 Répartition Territoriale**")
         df_reg = pd.DataFrame({
             'Région': ['Basse Guinée', 'Moyenne Guinée', 'Haute Guinée', 'Guinée Forestière'],
             'Production': [base_prod*0.2, base_prod*0.15, base_prod*0.4, base_prod*0.25]
         })
         fig_prod = px.bar(df_reg, x='Région', y='Production', 
-                          title=f"Répartition régionale du {culture_select}",
                           color='Région', 
                           color_discrete_sequence=px.colors.sequential.Greens_r)
         st.plotly_chart(fig_prod, use_container_width=True)
 
-    with col_b:
-        # Analyse du Yield Gap
-        st.write("**Analyse du 'Yield Gap' (Vision 2040)**")
+    with c_right:
+        # LE GRAPHIQUE D'ANALYSE DU GAP (Analyse de la structure du déficit)
+        st.write("**🎯 Analyse de l'Objectif 2040**")
         df_gap = pd.DataFrame({
             'Indicateur': ['Production Actuelle', 'Déficit à combler'],
             'Valeur': [base_prod, (d['obj_2040'] - base_prod)]
         })
         fig_gap = px.pie(df_gap, values='Valeur', names='Indicateur', 
                          hole=0.4,
-                         color_discrete_sequence=['#009460', '#ce1126'])
+                         color='Indicateur',
+                         color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'})
         st.plotly_chart(fig_gap, use_container_width=True)
+
+    # --- SECTION D : INDICE D'EFFICACITÉ (Analyse finale) ---
+    st.write("**📈 Indice d'Efficacité Régionale**")
+    df_perf = pd.DataFrame({
+        'Région': ['Basse Guinée', 'Moyenne Guinée', 'Haute Guinée', 'Guinée Forestière'],
+        'Efficacité (%)': [85, 62, 91, 78]
+    })
+    fig_perf = px.bar(df_perf, y='Région', x='Efficacité (%)', orientation='h',
+                      color='Efficacité (%)', color_continuous_scale='YlGn')
+    st.plotly_chart(fig_perf, use_container_width=True)
+
+    st.info(f"💡 **Analyse Stratégique :** Le diagnostic montre que pour la filière **{culture_select}**, le levier principal réside dans la réduction du Yield Gap de **{gap_rendement:.1f}%** via l'intensification dans les régions à faible efficacité.")    st.plotly_chart(fig_gap, use_container_width=True)
 
     # --- 3. INDICE D'EFFICACITÉ ---
     st.info(f"💡 **Note stratégique :** La région **Haute Guinée** concentre 40% de la production de {culture_select}. Une amélioration du rendement de 0.5 T/Ha dans cette zone réduirait les importations de 15%.")
@@ -279,6 +302,7 @@ with tab4:
 st.markdown("---")
 
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
+
 
 
 
