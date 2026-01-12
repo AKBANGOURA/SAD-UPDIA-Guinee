@@ -64,9 +64,9 @@ else:
     r_besoin = d['ratio_besoin']
 
 # --- 5. HEADER DYNAMIQUE ---
-titre_header = "Toutes les filières (Souveraineté Nationale)" if culture_select == "Tout" else f"la filière {culture_select}"
+titre_header = "Toutes les filières" if culture_select == "Tout" else f"la filière {culture_select}"
 st.title(f"🇬🇳 SAD UPDIA : Pilotage de {titre_header}")
-st.markdown(f"Analyse de souveraineté alimentaire basée sur les objectifs **Vision 2040**.")
+st.markdown(f"Analyse de souveraineté alimentaire basée sur les objectifs **Vision 2040**. Gouvernance de la politique agricole par les données")
 
 # --- 6. ONGLETS STRATÉGIQUES ---
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
@@ -442,6 +442,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
