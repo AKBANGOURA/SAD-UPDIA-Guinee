@@ -118,11 +118,18 @@ with tab1:
                       color='Efficacité (%)', color_continuous_scale='YlGn')
     st.plotly_chart(fig_perf, use_container_width=True)
 
-    st.info(f"💡 **Analyse Stratégique :** Le diagnostic montre que pour la filière **{culture_select}**, le levier principal réside dans la réduction du Yield Gap de **{gap_rendement:.1f}%** via l'intensification dans les régions à faible efficacité.")    st.plotly_chart(fig_gap, use_container_width=True)
-
-    # --- 3. INDICE D'EFFICACITÉ ---
-    st.info(f"💡 **Note stratégique :** La région **Haute Guinée** concentre 40% de la production de {culture_select}. Une amélioration du rendement de 0.5 T/Ha dans cette zone réduirait les importations de 15%.")
-with tab2:
+    # ... (juste après ton graphique st.plotly_chart(fig_perf))
+    
+    st.write("---")
+    st.subheader("📝 Synthèse du Diagnostic")
+    
+    # Fusion des deux analyses dans un seul bloc informatif
+    st.info(f"""
+    **Analyse Stratégique & Territoriale :**
+    * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%** par l'intensification technique.
+    * **Focus Régional :** La **Haute Guinée** concentrant 40% de la production, une hausse de rendement de **0.5 T/Ha** dans cette zone réduirait les importations nationales de **15%**.
+    """)
+    with tab2:
     st.subheader(f"Simulateur Agro-Climatique Avancé : {culture_select}")
     
     col_a, col_b = st.columns([1, 2])
@@ -302,6 +309,7 @@ with tab4:
 st.markdown("---")
 
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
+
 
 
 
