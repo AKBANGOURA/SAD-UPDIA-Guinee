@@ -68,24 +68,53 @@ with tab1:
     st.plotly_chart(fig_prod, use_container_width=True)
 
 with tab2:
-    st.subheader("Optimisation des Rendements par l'IA (Modèle INRAE)")
+    st.subheader(f"Optimisation & Résilience Climatique : {culture_select}")
+    
     col_a, col_b = st.columns([1, 2])
+    
     with col_a:
-        intrants = st.select_slider("Niveau de mécanisation & Intrants", options=["Traditionnel", "Semi-Mécanisé", "Intensif"])
-        irrigation = st.checkbox("Déploiement Irrigation Maîtrisée")
+        st.write("**Leviers Techniques**")
+        intrants = st.select_slider("Niveau d'intensification", options=["Traditionnel", "Semi-Mécanisé", "Intensif"])
+        irrigation = st.checkbox("Irrigation Maîtrisée (Réduit l'impact sécheresse)")
         
-        boost = 1.0
-        if intrants == "Semi-Mécanisé": boost += 0.4
-        if intrants == "Intensif": boost += 0.8
-        if irrigation: boost += 0.5
-        st.warning(f"Impact estimé sur le rendement : **+{int((boost-1)*100)}%**")
+        st.write("---")
+        st.write("**Aléas Climatiques**")
+        # Curseur de pluviométrie : de -50% (sécheresse) à +50% (excès/inondation)
+        meteo = st.slider("Variation de la pluviométrie (%)", -50, 50, 0)
+        
+        # LOGIQUE DE CALCUL COMPLEXE
+        # 1. Base Boost technique
+        boost_tech = {"Traditionnel": 1.0, "Semi-Mécanisé": 1.4, "Intensif": 1.8}[intrants]
+        
+        # 2. Impact Pluie (Si pas d'irrigation, la baisse de pluie chute le rendement)
+        impact_pluie = meteo / 100
+        if irrigation:
+            # L'irrigation divise par 3 l'impact négatif d'une sécheresse
+            if meteo < 0: impact_pluie = impact_pluie / 3
+            boost_tech += 0.3 # Bonus fixe pour l'irrigation
+            
+        total_boost = boost_tech + impact_pluie
+        
+        # Sécurité pour ne pas descendre sous 0
+        total_boost = max(0.2, total_boost)
+        
+        st.warning(f"Variation totale estimée : **{int((total_boost-1)*100)}%**")
         
     with col_b:
-        prod_simulee = base_prod * boost
-        fig_ia = px.bar(x=['Actuel', 'Simulé (IA)'], y=[base_prod, prod_simulee], 
-                        color=['Actuel', 'IA'], color_discrete_map={'Actuel': '#fcd116', 'IA': '#009460'},
-                        title=f"Potentiel de production {culture_select} après optimisation")
+        prod_simulee = base_prod * total_boost
+        
+        # Graphique de comparaison avec indicateur de perte/gain
+        fig_ia = px.bar(
+            x=['Actuel', f'Projection {culture_select}'], 
+            y=[base_prod, prod_simulee], 
+            color=['Actuel', 'Projection'],
+            color_discrete_map={'Actuel': '#fcd116', 'Projection': '#009460' if prod_simulee >= base_prod else '#ce1126'},
+            title=f"Impact combiné Technique & Climat sur {culture_select}"
+        )
         st.plotly_chart(fig_ia, use_container_width=True)
+        
+        if meteo < -20 and not irrigation:
+            st.error(f"⚠️ **Alerte Sécheresse** : Sans irrigation, la production de {culture_select} s'effondre malgré les intrants.")
 
 with tab3:
     st.subheader(f"Trajectoire de Souveraineté 2026-2040 : {culture_select}")
@@ -149,4 +178,5 @@ with tab4:
 st.markdown("---")
 
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
+
 
