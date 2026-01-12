@@ -73,49 +73,69 @@ with tab2:
     col_a, col_b = st.columns([1, 2])
     
     with col_a:
-        st.write("**Leviers Techniques**")
-        intrants = st.select_slider("Niveau d'intensification", options=["Traditionnel", "Semi-Mécanisé", "Intensif"])
-        irrigation = st.checkbox("Irrigation Maîtrisée (Réduit l'impact sécheresse)")
+        st.write("**⚙️ Configuration Technique**")
+        intrants = st.select_slider("Niveau d'intensification", options=["Traditionnel", "Semi-Mécanisé", "Intensif"], key="ia_tech")
+        irrigation = st.checkbox("Irrigation Maîtrisée", help="Réduit la vulnérabilité au stress hydrique")
         
         st.write("---")
-        st.write("**Aléas Climatiques**")
-        # Curseur de pluviométrie : de -50% (sécheresse) à +50% (excès/inondation)
-        meteo = st.slider("Variation de la pluviométrie (%)", -50, 50, 0)
+        st.write("**☁️ Facteur Pluviométrique**")
+        meteo_actuelle = st.slider("Variation de la pluie (%)", -50, 50, 0, help="0% = Pluviométrie normale")
         
-        # LOGIQUE DE CALCUL COMPLEXE
-        # 1. Base Boost technique
-        boost_tech = {"Traditionnel": 1.0, "Semi-Mécanisé": 1.4, "Intensif": 1.8}[intrants]
+        # LOGIQUE DE CALCUL DU BOOST
+        boost_base = {"Traditionnel": 1.0, "Semi-Mécanisé": 1.4, "Intensif": 1.8}[intrants]
         
-        # 2. Impact Pluie (Si pas d'irrigation, la baisse de pluie chute le rendement)
-        impact_pluie = meteo / 100
-        if irrigation:
-            # L'irrigation divise par 3 l'impact négatif d'une sécheresse
-            if meteo < 0: impact_pluie = impact_pluie / 3
-            boost_tech += 0.3 # Bonus fixe pour l'irrigation
+        def calculer_rendement(v_pluie, irrig, b_base):
+            # L'irrigation apporte un bonus de 30% et protège des pertes
+            if irrig:
+                b_base += 0.3
             
-        total_boost = boost_tech + impact_pluie
-        
-        # Sécurité pour ne pas descendre sous 0
-        total_boost = max(0.2, total_boost)
-        
-        st.warning(f"Variation totale estimée : **{int((total_boost-1)*100)}%**")
-        
-    with col_b:
-        prod_simulee = base_prod * total_boost
-        
-        # Graphique de comparaison avec indicateur de perte/gain
-        fig_ia = px.bar(
-            x=['Actuel', f'Projection {culture_select}'], 
-            y=[base_prod, prod_simulee], 
-            color=['Actuel', 'Projection'],
-            color_discrete_map={'Actuel': '#fcd116', 'Projection': '#009460' if prod_simulee >= base_prod else '#ce1126'},
-            title=f"Impact combiné Technique & Climat sur {culture_select}"
-        )
-        st.plotly_chart(fig_ia, use_container_width=True)
-        
-        if meteo < -20 and not irrigation:
-            st.error(f"⚠️ **Alerte Sécheresse** : Sans irrigation, la production de {culture_select} s'effondre malgré les intrants.")
+            impact = v_pluie / 100
+            
+            # Si sécheresse (v_pluie < 0)
+            if v_pluie < 0:
+                if irrig:
+                    impact = impact / 3  # L'irrigation divise par 3 les pertes liées au manque d'eau
+                else:
+                    impact = impact * 1.2 # Sans irrigation, l'impact négatif est amplifié
+            
+            return max(0.1, b_base + impact)
 
+        # Calcul pour l'affichage immédiat
+        rendement_final = calculer_rendement(meteo_actuelle, irrigation, boost_base)
+        prod_simulee = base_prod * rendement_final
+
+        st.metric(f"Production {culture_select}", f"{int(prod_simulee):,} T", 
+                  f"{int((rendement_final-1)*100)}% vs Actuel")
+
+        # --- GESTION DES ALERTES CRITIQUES (Ce que tu as soulevé) ---
+        if meteo_actuelle < -20:
+            if not irrigation:
+                st.error(f"🚨 **ALERTE SÉCHERESSE** : Sans irrigation, la production de {culture_select} s'effondre malgré l'utilisation d'intrants. Risque de famine locale.")
+            else:
+                st.warning(f"⚠️ **STRESS HYDRIQUE** : L'irrigation limite les pertes, mais la production subit une baisse de rendement.")
+        elif meteo_actuelle > 30:
+            st.error(f"🌊 **RISQUE D'INONDATION** : Un excès de pluie (>30%) risque de lessiver les sols et détruire les récoltes de {culture_select}.")
+
+    with col_b:
+        # 1. Graphique de Comparaison Simple
+        fig_comp = px.bar(x=['Actuel', 'Simulé'], y=[base_prod, prod_simulee], 
+                          color=['Actuel', 'Simulé'], 
+                          color_discrete_map={'Actuel': '#fcd116', 'Simulé': '#009460' if prod_simulee >= base_prod else '#ce1126'},
+                          title="Impact Immédiat sur la Campagne")
+        st.plotly_chart(fig_comp, use_container_width=True)
+
+        # 2. Graphique de Sensibilité (Courbe de réponse)
+        pluie_range = np.linspace(-50, 50, 21)
+        rendements_courbe = [base_prod * calculer_rendement(p, irrigation, boost_base) for p in pluie_range]
+        
+        df_sens = pd.DataFrame({'Pluie (%)': pluie_range, 'Production (T)': rendements_courbe})
+        fig_sens = px.line(df_sens, x='Pluie (%)', y='Production (T)', 
+                           title=f"Résilience de la filière {culture_select} aux variations d'eau",
+                           markers=True)
+        fig_sens.add_vline(x=meteo_actuelle, line_dash="dot", line_color="red", annotation_text="Point actuel")
+        fig_sens.add_hline(y=base_prod, line_dash="dash", line_color="orange")
+        
+        st.plotly_chart(fig_sens, use_container_width=True)
 with tab3:
     st.subheader(f"Trajectoire de Souveraineté 2026-2040 : {culture_select}")
     tx_croissance = st.slider("Taux de croissance annuel visé (%)", 1, 15, 6)
@@ -178,5 +198,6 @@ with tab4:
 st.markdown("---")
 
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
+
 
 
