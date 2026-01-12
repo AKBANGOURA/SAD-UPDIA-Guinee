@@ -139,12 +139,13 @@ with tab4:
             title="Répartition de l'impact par levier",
             color='Levier',
             color_discrete_map={
-                'Semences': '#ce1126', # Rouge
+                'Semences': '#009460'  # Vert
                 'Engrais': '#fcd116',  # Jaune
-                'Machines': '#009460'  # Vert
+                'Machines': '#ce1126', # Rouge
             }
         )
         
         st.plotly_chart(fig_roi, use_container_width=True)
 st.markdown("---")
+
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
