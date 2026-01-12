@@ -19,39 +19,63 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 3. BASE DE DONNÉES MULTI-FILIÈRES (PNIASAN) ---
+# Note : J'ai ajouté 'seuil_fao' pour que l'onglet 3 fonctionne aussi en mode "Tout"
 filières_db = {
-    'Riz': {'prod': 2250000, 'obj_2040': 5000000, 'ratio_besoin': 1.6, 'coef_roi': 850},
-    'Maïs': {'prod': 850000, 'obj_2040': 2000000, 'ratio_besoin': 1.4, 'coef_roi': 650},
-    'Fonio': {'prod': 550000, 'obj_2040': 1300000, 'ratio_besoin': 1.2, 'coef_roi': 450},
-    'Cassave': {'prod': 1200000, 'obj_2040': 3000000, 'ratio_besoin': 1.3, 'coef_roi': 550}
+    'Riz': {'prod': 2250000, 'obj_2040': 5000000, 'ratio_besoin': 1.6, 'coef_roi': 850, 'seuil_fao': 100},
+    'Maïs': {'prod': 850000, 'obj_2040': 2000000, 'ratio_besoin': 1.4, 'coef_roi': 650, 'seuil_fao': 55},
+    'Fonio': {'prod': 550000, 'obj_2040': 1300000, 'ratio_besoin': 1.2, 'coef_roi': 450, 'seuil_fao': 40},
+    'Cassave': {'prod': 1200000, 'obj_2040': 3000000, 'ratio_besoin': 1.3, 'coef_roi': 550, 'seuil_fao': 80}
 }
 
 # --- 4. BARRE LATÉRALE DE PILOTAGE ---
 st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Flag_of_Guinea.svg/1200px-Flag_of_Guinea.svg.png", width=150)
 st.sidebar.title("Pilotage Stratégique")
 
-# Variable Maîtresse : Choix de la culture
-culture_select = st.sidebar.selectbox("Filière Agricole Prioritaire", list(filières_db.keys()), key="filiere_master")
+# Variable Maîtresse : Ajout de l'option "Tout"
+options_culture = ["Tout"] + list(filières_db.keys())
+culture_select = st.sidebar.selectbox("Filière Agricole Prioritaire", options_culture, key="filiere_master")
 
 scénario = st.sidebar.selectbox("Scénario d'investissement", ["Stagnation", "PNIASAN (Modéré)", "Vision 2040 (Ambitieux)"])
 budget_total = st.sidebar.number_input("Budget Total (Milliards GNF)", min_value=1, value=2500)
 
 st.sidebar.markdown("---")
-st.sidebar.info("Expertise : PhD INRAE\nCellule : UPDIA\nVision Guinée 2040")
+st.sidebar.info("Expertise : PhD INRAE\nCellule : UPDIA Vision\nGuinée 2040")
 
-# Extraction des données dynamiques
-d = filières_db[culture_select]
-base_prod = d['prod']
-obj_2040 = d['obj_2040']
-r_besoin = d['ratio_besoin']
+# --- EXTRACTION ET CALCULS DYNAMIQUES (Le nouveau bloc logique) ---
+if culture_select == "Tout":
+    # On additionne les volumes pour la vision nationale
+    base_prod = sum(f['prod'] for f in filières_db.values())
+    obj_2040 = sum(f['obj_2040'] for f in filières_db.values())
+    
+    # On fait la moyenne pour les indicateurs de rendement/besoin
+    d = {
+        'prod': base_prod,
+        'obj_2040': obj_2040,
+        'ratio_besoin': np.mean([f['ratio_besoin'] for f in filières_db.values()]),
+        'coef_roi': np.mean([f['coef_roi'] for f in filières_db.values()]),
+        'seuil_fao': np.mean([f['seuil_fao'] for f in filières_db.values()])
+    }
+    r_besoin = d['ratio_besoin']
+else:
+    # Extraction classique pour une seule filière
+    d = filières_db[culture_select]
+    base_prod = d['prod']
+    obj_2040 = d['obj_2040']
+    r_besoin = d['ratio_besoin']
 
 # --- 5. HEADER DYNAMIQUE ---
-st.title(f"🇬🇳 SAD UPDIA : Pilotage de la filière {culture_select}")
+titre_header = "Toutes les filières (Souveraineté Nationale)" if culture_select == "Tout" else f"la filière {culture_select}"
+st.title(f"🇬🇳 SAD UPDIA : Pilotage de {titre_header}")
 st.markdown(f"Analyse de souveraineté alimentaire basée sur les objectifs **Vision 2040**.")
 
 # --- 6. ONGLETS STRATÉGIQUES ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Diagnostic : Statistiques naltionales", "🤖 IA & Rendements : Résilience", "🎯 Simulateur Vision : Guinée 2040", "💰 Finance : Efficacité Budgétaire", "🏭 Transformation & Valeur Ajoutée"])
-
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📊 Diagnostic : Statistiques nationales", 
+    "🤖 IA & Rendements : Résilience", 
+    "🎯 Simulateur Vision : Guinée 2040", 
+    "💰 Finance : Efficacité Budgétaire", 
+    "🏭 Transformation & Valeur Ajoutée"
+])
 
 with tab1:
     st.subheader(f"📊 Analyse Complète de la Production : {culture_select}")
@@ -418,6 +442,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
