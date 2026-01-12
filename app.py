@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import numpy as np
 
 # --- 1. CONFIGURATION AVANCÉE ---
@@ -386,18 +387,30 @@ with tab5:
         st.success(f"Gain par l'industrie : **+{int(economie_perte):,} T** récupérées")
 
     with col_t2:
-        # Visualisation de la chaîne de valeur
-        st.write("**📦 Disponibilité Réelle après Pertes & Transformation**")
+        st.write("**📦 Flux de Valeur : Du Champ à l'Assiette**")
         
-        labels = ['Production Champ', 'Pertes Post-Récolte', 'Disponible Consommation']
-        values = [base_prod, -perte_tonnes, base_prod - perte_tonnes]
+        # Calcul des étapes
+        dispo_reelle = base_prod - perte_tonnes
         
-        fig_valeur = px.waterfall(
-            name="Valeur", orientation="v",
-            x=labels, y=values,
-            connector={"line":{"color":"rgb(63, 63, 63)"}},
-            title=f"Flux de la filière {culture_select} (Champ -> Assiette)"
+        fig_valeur = go.Figure(go.Waterfall(
+            name = "Flux", 
+            orientation = "v",
+            measure = ["relative", "relative", "total"],
+            x = ["Production Champ", "Pertes Post-Récolte", "Disponible Final"],
+            textposition = "outside",
+            text = [f"+{int(base_prod)}", f"-{int(perte_tonnes)}", f"={int(dispo_reelle)}"],
+            y = [base_prod, -perte_tonnes, 0], # Le 0 avec 'total' calcule la somme automatiquement
+            connector = {"line":{"color":"rgb(63, 63, 63)"}},
+            increasing = {"marker":{"color":"#009460"}}, # Vert
+            decreasing = {"marker":{"color":"#ce1126"}}, # Rouge
+            totals = {"marker":{"color":"#fcd116"}}      # Jaune
+        ))
+
+        fig_valeur.update_layout(
+            title = f"Analyse des Pertes : {culture_select}",
+            showlegend = False
         )
+        
         st.plotly_chart(fig_valeur, use_container_width=True)
 
     st.write("---")
@@ -405,6 +418,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
