@@ -129,7 +129,7 @@ with tab1:
     * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%** par l'intensification technique.
     * **Focus Régional :** La **Haute Guinée** concentrant 40% de la production, une hausse de rendement de **0.5 T/Ha** dans cette zone réduirait les importations nationales de **15%**.
     """)
-    with tab2:
+with tab2:
     st.subheader(f"Simulateur Agro-Climatique Avancé : {culture_select}")
     
     col_a, col_b = st.columns([1, 2])
@@ -309,6 +309,7 @@ with tab4:
 st.markdown("---")
 
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
+
 
 
 
