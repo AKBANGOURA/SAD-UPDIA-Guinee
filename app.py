@@ -142,6 +142,7 @@ with tab2:
         fig_sens.add_hline(y=base_prod, line_dash="dash", line_color="orange", annotation_text="Seuil Actuel")
         
         st.plotly_chart(fig_sens, use_container_width=True)
+    st.success(f"**Synthèse IA :** L'interaction entre le sol **{type_sol}** et une variation pluviométrique de **{meteo_actuelle}%** donne un rendement de **{rendement_final:.2f} T/Ha** (équivalent).")
 st.write("---")
 st.subheader("📡 Anticipation des Crises (Imagerie Satellite & NDVI)")
 
@@ -183,7 +184,7 @@ st.info(f"""
 En cas de NDVI < {seuil_alerte}, le modèle UPDIA recommande l'activation immédiate des stocks de sécurité 
 et une aide d'urgence pour la filière **{culture_select}**.
 """)
-    st.success(f"**Synthèse IA :** L'interaction entre le sol **{type_sol}** et une variation pluviométrique de **{meteo_actuelle}%** donne un rendement de **{rendement_final:.2f} T/Ha** (équivalent).")
+
 with tab3:
     st.subheader(f"Trajectoire de Souveraineté 2026-2040 : {culture_select}")
     tx_croissance = st.slider("Taux de croissance annuel visé (%)", 1, 15, 6)
@@ -246,6 +247,7 @@ with tab4:
 st.markdown("---")
 
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
+
 
 
 
