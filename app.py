@@ -142,7 +142,47 @@ with tab2:
         fig_sens.add_hline(y=base_prod, line_dash="dash", line_color="orange", annotation_text="Seuil Actuel")
         
         st.plotly_chart(fig_sens, use_container_width=True)
+st.write("---")
+st.subheader("📡 Anticipation des Crises (Imagerie Satellite & NDVI)")
 
+col_s1, col_s2 = st.columns([1, 2])
+
+with col_s1:
+    st.write("**Analyse Sentinel-2 (Simulation)**")
+    # Simulation d'un indice NDVI (0.0 à 1.0)
+    ndvi_obs = st.slider("Indice de Végétation observé (NDVI)", 0.1, 0.9, 0.5, 
+                         help="Un NDVI < 0.4 indique souvent un stress hydrique ou une anomalie de croissance.")
+    
+    # Logique d'anticipation
+    seuil_alerte = 0.45
+    alerte_crise = ndvi_obs < seuil_alerte
+    
+    if alerte_crise:
+        st.error(f"🚨 **ALERTE PRÉCOCE** : Le NDVI est anormalement bas ({ndvi_obs}). Risque de crise alimentaire détecté pour le {culture_select}.")
+    else:
+        st.success(f"✅ **Vigueur Optimale** : Le couvert végétal ({ndvi_obs}) est conforme aux moyennes saisonnières.")
+
+with col_s2:
+    # Graphique de tendance satellite (Simulé sur les 6 derniers mois)
+    mois = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin"]
+    # On génère une courbe qui finit par la valeur du slider
+    tendance_ndvi = [0.3, 0.35, 0.42, 0.48, 0.52, ndvi_obs]
+    
+    fig_satellite = px.area(x=mois, y=tendance_ndvi, 
+                            title=f"Suivi Satellite NDVI (Tendance 6 mois) - {culture_select}",
+                            labels={'x': 'Mois', 'y': 'Indice NDVI'},
+                            color_discrete_sequence=['#1e4d2b'])
+    
+    # Zone d'alerte rouge
+    fig_satellite.add_hrect(y0=0.1, y1=0.4, line_width=0, fillcolor="red", opacity=0.2, annotation_text="ZONE DE CRISE")
+    
+    st.plotly_chart(fig_satellite, use_container_width=True)
+
+st.info(f"""
+**Note Scientifique :** Ce module simule l'intégration de données multispectrales. 
+En cas de NDVI < {seuil_alerte}, le modèle UPDIA recommande l'activation immédiate des stocks de sécurité 
+et une aide d'urgence pour la filière **{culture_select}**.
+""")
     st.success(f"**Synthèse IA :** L'interaction entre le sol **{type_sol}** et une variation pluviométrique de **{meteo_actuelle}%** donne un rendement de **{rendement_final:.2f} T/Ha** (équivalent).")
 with tab3:
     st.subheader(f"Trajectoire de Souveraineté 2026-2040 : {culture_select}")
@@ -206,6 +246,7 @@ with tab4:
 st.markdown("---")
 
 st.caption(f"SAD UPDIA | République de Guinée | Expertise PhD INRAE | Filière active : {culture_select}")
+
 
 
 
