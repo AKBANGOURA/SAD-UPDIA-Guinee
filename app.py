@@ -134,15 +134,39 @@ with tab1:
                          color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'})
         st.plotly_chart(fig_gap, use_container_width=True)
 
-    # --- SECTION D : INDICE D'EFFICACITÉ (Analyse finale) ---
-    st.write("**📈 Indice d'Efficacité Régionale**")
-    df_perf = pd.DataFrame({
-        'Région': ['Basse Guinée', 'Moyenne Guinée', 'Haute Guinée', 'Guinée Forestière'],
-        'Efficacité (%)': [85, 62, 91, 78]
-    })
-    fig_perf = px.bar(df_perf, y='Région', x='Efficacité (%)', orientation='h',
-                      color='Efficacité (%)', color_continuous_scale='YlGn')
-    st.plotly_chart(fig_perf, use_container_width=True)
+    # --- SECTION D : CARTOGRAPHIE DE L'EFFICACITÉ (Analyse spatiale) ---
+st.write("**📍 Cartographie de l'Efficacité Régionale**")
+
+# Préparation des données avec coordonnées pour le positionnement
+df_map = pd.DataFrame({
+    'Région': ['Basse Guinée', 'Moyenne Guinée', 'Haute Guinée', 'Guinée Forestière'],
+    'Efficacité (%)': [85, 62, 91, 78],
+    'lat': [10.5, 11.2, 10.8, 8.5],  # Coordonnées approximatives des centres régionaux
+    'lon': [-13.5, -11.8, -9.5, -9.2]
+})
+
+# Création de la carte avec Plotly
+fig_map = px.scatter_mapbox(
+    df_map, 
+    lat="lat", 
+    lon="lon", 
+    color="Efficacité (%)", 
+    size="Efficacité (%)",
+    hover_name="Région", 
+    hover_data={"lat": False, "lon": False, "Efficacité (%)": True},
+    color_continuous_scale="RdYlGn", # Vert pour le succès, Rouge pour les zones à aider
+    size_max=30, 
+    zoom=5.5, 
+    mapbox_style="carto-positron"
+)
+
+# Ajustement de la mise en page pour centrer sur la Guinée
+fig_map.update_layout(
+    margin={"r":0,"t":0,"l":0,"b":0},
+    mapbox=dict(center=dict(lat=10.5, lon=-11.0))
+)
+
+st.plotly_chart(fig_map, use_container_width=True)
 
     # ... (juste après ton graphique st.plotly_chart(fig_perf))
     
@@ -442,6 +466,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
