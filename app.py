@@ -167,9 +167,11 @@ with c_right:
                          color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'})
         st.plotly_chart(fig_gap, use_container_width=True)
 
-    # --- SECTION D : CARTOGRAPHIE DE L'EFFICACITÉ (Analyse spatiale) ---
-st.write("**📍 Cartographie de l'Efficacité par Région Administrative**")
+    # --- SECTION E : CARTOGRAPHIE (Haute Visibilité) ---
+st.write("---")
+st.write("**📍 Cartographie de l'Efficacité Régionale**")
 
+# DataFrame des 8 régions administratives
 df_map = pd.DataFrame({
     'Région': ['Boké', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labé', "N'Zérékoré", 'Conakry'],
     'Efficacité (%)': [82, 78, 65, 88, 92, 70, 85, 40],
@@ -179,17 +181,32 @@ df_map = pd.DataFrame({
 
 fig_map = px.scatter_mapbox(
     df_map, 
-    lat="lat", lon="lon", 
-    color="Efficacité (%)", size="Efficacité (%)",
+    lat="lat", 
+    lon="lon", 
+    color="Efficacité (%)", 
+    size="Efficacité (%)",
     hover_name="Région", 
     color_continuous_scale="RdYlGn",
-    size_max=25, zoom=5.8, 
-    mapbox_style="carto-positron"
+    size_max=25, 
+    zoom=5.8, 
+    mapbox_style="carto-darkmatter" # <--- Rend l'extérieur sombre
 )
-# Ajustement de la mise en page pour centrer sur la Guinée
+
+# Configuration avancée des frontières et du centrage
 fig_map.update_layout(
     margin={"r":0,"t":0,"l":0,"b":0},
-    mapbox=dict(center=dict(lat=10.5, lon=-11.0))
+    mapbox=dict(
+        center=dict(lat=10.5, lon=-11.0),
+        layers=[]
+    )
+)
+
+# Rendre les frontières nationales visibles
+fig_map.update_geos(
+    showcountries=True, 
+    countrycolor="white", # Frontière blanche pour trancher sur le fond noir
+    showcoastlines=True, 
+    coastlinecolor="white"
 )
 
 st.plotly_chart(fig_map, use_container_width=True)
@@ -487,6 +504,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
