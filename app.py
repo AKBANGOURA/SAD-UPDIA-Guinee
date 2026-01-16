@@ -235,6 +235,50 @@ with tab1:
         * **Recommandation :** Cibler les zones affichées en jaune/rouge sur la carte pour une mise à niveau technique immédiate.
     """)
 
+    # --- SECTION : PLAN DE RATTRAPAGE TECHNIQUE (Adapté par Culture) ---
+    st.write("---")
+    st.subheader(f"🚀 Besoins Ressources pour l'Objectif 2040 : {culture_select}")
+    
+    deficit_t = max(0, d['obj_2040'] - base_prod)
+    
+    if deficit_t > 0:
+        # 1. Définition des standards techniques par culture
+        # Ratios : (Semences kg/Ha, Engrais kg/Ha)
+        normes = {
+            'Riz': {'semences': 60, 'engrais': 200, 'label': 'Riziculture intensive'},
+            'Fonio': {'semences': 25, 'engrais': 50, 'label': 'Culture résiliente'},
+            'Maïs': {'semences': 20, 'engrais': 250, 'label': 'Exigence azotée'},
+            'Cassave': {'semences': 1000, 'engrais': 100, 'label': 'Boutures/Ha'} # Pour la Cassave, on parle souvent en boutures
+        }
+        
+        # Récupération des paramètres ou valeurs par défaut
+        tech = normes.get(culture_select, {'semences': 30, 'engrais': 150, 'label': 'Standard'})
+        
+        col_plan1, col_plan2, col_plan3 = st.columns(3)
+        
+        # 2. Calcul des besoins
+        # On calcule la surface nécessaire pour produire le déficit sur la base du rendement actuel
+        ha_supp = deficit_t / rendement_moyen
+        
+        semences_totales = (ha_supp * tech['semences']) / 1000  # Converti en Tonnes
+        engrais_total = (ha_supp * tech['engrais']) / 1000     # Converti en Tonnes
+
+        # 3. Affichage des métriques
+        col_plan1.metric("Terres à mobiliser", f"{ha_supp:,.0f} Ha", f"Type: {tech['label']}")
+        
+        unit_semence = "T de Boutures" if culture_select == "Cassave" else "T de Semences"
+        col_plan2.metric(f"Besoin {unit_semence}", f"{semences_totales:,.1f} T", f"{tech['semences']} kg/Ha")
+        
+        col_plan3.metric("Besoin Engrais (NPK)", f"{engrais_total:,.1f} T", f"{tech['engrais']} kg/Ha")
+
+        # 4. Message d'orientation stratégique
+        st.info(f"""
+            **Directives pour combler le déficit ({deficit_t:,.0f} T) :**
+            * **Option A (Expansion) :** Aménager **{ha_supp:,.0f} hectares** supplémentaires avec les rendements actuels.
+            * **Option B (Intensification) :** Augmenter le rendement de **{rendement_moyen:.2f} T/Ha** à **{objectif_rendement:.2f} T/Ha** sur les surfaces existantes pour économiser les terres.
+        """)
+    else:
+        st.success(f"✅ La production actuelle de {culture_select} couvre déjà les besoins théoriques de l'objectif 2040.")
     # Exportation CSV
     export_df = df_pref[['Region', 'Pref', 'Production', 'Efficacité']].copy()
     csv = export_df.to_csv(index=False).encode('utf-8')
@@ -583,6 +627,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
