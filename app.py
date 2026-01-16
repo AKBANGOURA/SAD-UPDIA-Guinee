@@ -106,34 +106,60 @@ with tab1:
 
     st.write("---")
 
-    # --- SECTION C : VISUALISATION (Fusion des deux types de graphiques) ---
-    c_left, c_right = st.columns(2)
+    # --- SECTION C : VISUALISATION (Adaptée aux régions administratives) ---
+c_left, c_right = st.columns(2)
+
+with c_left:
+    st.write("**📍 Répartition par Région Administrative**")
     
-    with c_left:
-        # TON GRAPHIQUE RÉGIONAL D'ORIGINE
-        st.write("**📍 Répartition Territoriale**")
-        df_reg = pd.DataFrame({
-            'Région': ['Basse Guinée', 'Moyenne Guinée', 'Haute Guinée', 'Guinée Forestière'],
-            'Production': [base_prod*0.2, base_prod*0.15, base_prod*0.4, base_prod*0.25]
-        })
-        fig_prod = px.bar(df_reg, x='Région', y='Production', 
-                          color='Région', 
-                          color_discrete_sequence=px.colors.sequential.Greens_r)
-        st.plotly_chart(fig_prod, use_container_width=True)
+    # Distribution de la production simulée par région administrative
+    # Basé sur la liste officielle : Boke, Kindia, Mamou, Faranah, Kankan, Labe, N'Zerekore, Conakry
+    # Nous utilisons des clés simplifiées sans accent pour la compatibilité
+    pondération_prod = {
+        "Boke": 0.15, "Kindia": 0.20, "Mamou": 0.10, "Faranah": 0.15, 
+        "Kankan": 0.25, "Labe": 0.08, "N'Zerekore": 0.06, "Conakry": 0.01
+    }
+    
+    df_reg = pd.DataFrame({
+        'Région': list(pondération_prod.keys()),
+        'Production': [base_prod * v for v in pondération_prod.values()]
+    })
+    
+    fig_prod = px.bar(
+        df_reg, 
+        x='Région', 
+        y='Production', 
+        color='Région', 
+        color_discrete_sequence=px.colors.sequential.Greens_r,
+        text_auto='.2s'
+    )
+    
+    fig_prod.update_layout(showlegend=False, xaxis_title=None)
+    st.plotly_chart(fig_prod, use_container_width=True)
 
-    with c_right:
-        # LE GRAPHIQUE D'ANALYSE DU GAP (Analyse de la structure du déficit)
-        st.write("**🎯 Analyse de l'Objectif 2040**")
-        df_gap = pd.DataFrame({
-            'Indicateur': ['Production Actuelle', 'Déficit à combler'],
-            'Valeur': [base_prod, (d['obj_2040'] - base_prod)]
-        })
-        fig_gap = px.pie(df_gap, values='Valeur', names='Indicateur', 
-                         hole=0.4,
-                         color='Indicateur',
-                         color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'})
-        st.plotly_chart(fig_gap, use_container_width=True)
-
+with c_right:
+    st.write("**🎯 Analyse de l'Objectif Vision 2040**")
+    
+    # Analyse de la structure du déficit national
+    df_gap = pd.DataFrame({
+        'Indicateur': ['Production Actuelle', 'Déficit à combler'],
+        'Valeur': [base_prod, max(0, d['obj_2040'] - base_prod)]
+    })
+    
+    fig_gap = px.pie(
+        df_gap, 
+        values='Valeur', 
+        names='Indicateur', 
+        hole=0.4,
+        color='Indicateur',
+        color_discrete_map={
+            'Production Actuelle': '#009460', 
+            'Déficit à combler': '#ce1126'
+        }
+    )
+    
+    fig_gap.update_traces(textposition='inside', textinfo='percent+label')
+    st.plotly_chart(fig_gap, use_container_width=True)
     # --- SECTION D : CARTOGRAPHIE DYNAMIQUE DE L'EFFICACITÉ (CORRIGÉE) ---
 st.write("---")
 st.subheader("📍 Cartographie de l'Efficacité Régionale")
@@ -496,6 +522,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
