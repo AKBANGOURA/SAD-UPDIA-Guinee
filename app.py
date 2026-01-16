@@ -141,7 +141,7 @@ st.info(f"""
         * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%** par l'intensification technique.
         * **Focus Régional :** La région de **{region_leader}** concentrant **{part_production:.0f}%** de la production, une hausse de rendement de **0.5 T/Ha** dans cette zone administrative réduirait les importations nationales de **{impact_import:.1f}%**.
         """)
-    with c_right:
+with c_right:
         # LE GRAPHIQUE D'ANALYSE DU GAP (Analyse de la structure du déficit)
         st.write("**🎯 Analyse de l'Objectif 2040**")
         df_gap = pd.DataFrame({
@@ -474,6 +474,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
