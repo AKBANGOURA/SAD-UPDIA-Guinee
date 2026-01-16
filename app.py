@@ -168,13 +168,13 @@ fig_map.update_layout(
 
 st.plotly_chart(fig_map, use_container_width=True)
 
-    # ... (juste après ton graphique st.plotly_chart(fig_perf))
+# ... (juste après ton graphique st.plotly_chart(fig_perf))
     
-    st.write("---")
-    st.subheader("📝 Synthèse du Diagnostic")
+st.write("---")
+st.subheader("📝 Synthèse du Diagnostic")
     
-    # Fusion des deux analyses dans un seul bloc informatif
-    st.info(f"""
+# Fusion des deux analyses dans un seul bloc informatif
+st.info(f"""
     **Analyse Stratégique & Territoriale :**
     * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%** par l'intensification technique.
     * **Focus Régional :** La **Haute Guinée** concentrant 40% de la production, une hausse de rendement de **0.5 T/Ha** dans cette zone réduirait les importations nationales de **15%**.
@@ -466,6 +466,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
