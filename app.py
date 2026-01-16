@@ -311,7 +311,7 @@ with tab2:
             st.warning("🌊 **RISQUE D'INONDATION** : Un excès de pluie peut saturer les sols et détruire les récoltes.")
 
     with col_b:
-        # 1. GRAPHIQUE DE COMPARAISON (REMIS À JOUR)
+        # 1. GRAPHIQUE DE COMPARAISON
         fig_comp = px.bar(
             x=['Production Actuelle', f'Projection IA ({culture_select})'], 
             y=[base_prod, prod_simulee], 
@@ -583,6 +583,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
