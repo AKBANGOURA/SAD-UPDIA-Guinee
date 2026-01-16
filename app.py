@@ -190,18 +190,32 @@ with tab1:
         fig_prod.update_layout(showlegend=False, coloraxis_showscale=False, margin=dict(t=0, b=0))
         st.plotly_chart(fig_prod, use_container_width=True)
 
-    with c_right:
-        st.write("**🎯 Analyse de l'Objectif 2040**")
-        df_gap = pd.DataFrame({
-            'Indicateur': ['Production Actuelle', 'Déficit à combler'],
-            'Valeur': [base_prod, max(0, d['obj_2040'] - base_prod)]
-        })
-        fig_gap = px.pie(
-            df_gap, values='Valeur', names='Indicateur', hole=0.4,
-            color_discrete_map={'Production Actuelle': '#009460', # Vert Guinée
-            'Déficit à combler': '#ce1126'    # Rouge Guinée}
-        )
-        st.plotly_chart(fig_gap, use_container_width=True)
+    # --- LIGNES À MODIFIER DANS LA SECTION C (Analyse de l'Objectif 2040) ---
+
+with c_right:
+    st.write("**🎯 Analyse de l'Objectif 2040**")
+    df_gap = pd.DataFrame({
+        'Indicateur': ['Production Actuelle', 'Déficit à combler'],
+        'Valeur': [base_prod, max(0, d['obj_2040'] - base_prod)]
+    })
+    
+    # C'est ici que le changement s'opère pour les couleurs
+    fig_gap = px.pie(
+        df_gap, 
+        values='Valeur', 
+        names='Indicateur', 
+        hole=0.4,
+        color='Indicateur', # On indique à Plotly d'utiliser la colonne Indicateur pour les couleurs
+        color_discrete_map={
+            'Production Actuelle': '#009460', # Vert Guinée
+            'Déficit à combler': '#ce1126'    # Rouge Guinée
+        }
+    )
+    
+    # Optionnel : Forcer l'affichage des étiquettes pour plus de clarté
+    fig_gap.update_traces(textinfo='percent+label', marker=dict(line=dict(color='#000000', width=1)))
+    
+    st.plotly_chart(fig_gap, use_container_width=True)
 
     # --- SECTION E : CARTE DES 33 PRÉFECTURES ---
     st.write("---")
@@ -573,6 +587,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
