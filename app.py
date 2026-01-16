@@ -199,21 +199,24 @@ with c_right:
         'Valeur': [base_prod, max(0, d['obj_2040'] - base_prod)]
     })
     
-    # C'est ici que le changement s'opère pour les couleurs
     fig_gap = px.pie(
         df_gap, 
         values='Valeur', 
         names='Indicateur', 
-        hole=0.4,
-        color='Indicateur', # On indique à Plotly d'utiliser la colonne Indicateur pour les couleurs
+        hole=0.5, # Augmente le trou central pour plus d'élégance
+        color='Indicateur',
         color_discrete_map={
-            'Production Actuelle': '#009460', # Vert Guinée
-            'Déficit à combler': '#ce1126'    # Rouge Guinée
+            'Production Actuelle': '#009460', # Vert
+            'Déficit à combler': '#ce1126'    # Rouge
         }
     )
-    
-    # Optionnel : Forcer l'affichage des étiquettes pour plus de clarté
-    fig_gap.update_traces(textinfo='percent+label', marker=dict(line=dict(color='#000000', width=1)))
+
+    # --- AJUSTEMENTS CRUCIAUX POUR ÉVITER LE MASQUAGE ---
+    fig_gap.update_layout(
+        height=350,  # Force une hauteur raisonnable
+        margin=dict(t=20, b=20, l=0, r=0), # Réduit les marges blanches autour
+        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5) # Légende horizontale en bas
+    )
     
     st.plotly_chart(fig_gap, use_container_width=True)
 
@@ -587,6 +590,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
