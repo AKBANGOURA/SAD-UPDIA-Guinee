@@ -110,17 +110,39 @@ with tab1:
     c_left, c_right = st.columns(2)
     
     with c_left:
-        # TON GRAPHIQUE RÉGIONAL D'ORIGINE
-        st.write("**📍 Répartition Territoriale**")
+    st.write("**📍 Répartition par Région Administrative**")
+with c_left:
+        # VOTRE GRAPHIQUE RÉGIONAL MIS À JOUR (8 RÉGIONS)
+        st.write("**📍 Répartition par Région Administrative**")
         df_reg = pd.DataFrame({
-            'Région': ['Basse Guinée', 'Moyenne Guinée', 'Haute Guinée', 'Guinée Forestière'],
-            'Production': [base_prod*0.2, base_prod*0.15, base_prod*0.4, base_prod*0.25]
+            'Région': ['Boké', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labé', "N'Zérékoré", 'Conakry'],
+            'Production': [
+                base_prod*0.12, base_prod*0.15, base_prod*0.08, 
+                base_prod*0.15, base_prod*0.25, base_prod*0.10, 
+                base_prod*0.14, base_prod*0.01
+            ]
         })
         fig_prod = px.bar(df_reg, x='Région', y='Production', 
                           color='Région', 
                           color_discrete_sequence=px.colors.sequential.Greens_r)
         st.plotly_chart(fig_prod, use_container_width=True)
 
+    # --- ÉTAPE 1 : CALCULS DYNAMIQUES POUR LA SYNTHÈSE ---
+    # On trouve la ligne avec la production maximale
+    idx_max = df_reg['Production'].idxmax()
+    region_leader = df_reg.loc[idx_max, 'Région']
+    part_production = (df_reg['Production'].max() / base_prod) * 100
+    impact_import = 15 * (part_production / 40) # Calcul d'impact proportionnel
+
+    # --- ÉTAPE 2 : AFFICHAGE DE LA SYNTHÈSE CORRIGÉE ---
+    st.write("---")
+    st.subheader("📝 Synthèse du Diagnostic")
+    
+    st.info(f"""
+        **Analyse Stratégique & Territoriale :**
+        * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%** par l'intensification technique.
+        * **Focus Régional :** La région de **{region_leader}** concentrant **{part_production:.0f}%** de la production, une hausse de rendement de **0.5 T/Ha** dans cette zone administrative réduirait les importations nationales de **{impact_import:.1f}%**.
+        """)
     with c_right:
         # LE GRAPHIQUE D'ANALYSE DU GAP (Analyse de la structure du déficit)
         st.write("**🎯 Analyse de l'Objectif 2040**")
@@ -135,31 +157,24 @@ with tab1:
         st.plotly_chart(fig_gap, use_container_width=True)
 
     # --- SECTION D : CARTOGRAPHIE DE L'EFFICACITÉ (Analyse spatiale) ---
-st.write("**📍 Cartographie de l'Efficacité Régionale**")
+st.write("**📍 Cartographie de l'Efficacité par Région Administrative**")
 
-# Préparation des données avec coordonnées pour le positionnement
 df_map = pd.DataFrame({
-    'Région': ['Basse Guinée', 'Moyenne Guinée', 'Haute Guinée', 'Guinée Forestière'],
-    'Efficacité (%)': [85, 62, 91, 78],
-    'lat': [10.5, 11.2, 10.8, 8.5],  # Coordonnées approximatives des centres régionaux
-    'lon': [-13.5, -11.8, -9.5, -9.2]
+    'Région': ['Boké', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labé', "N'Zérékoré", 'Conakry'],
+    'Efficacité (%)': [82, 78, 65, 88, 92, 70, 85, 40],
+    'lat': [11.05, 10.05, 10.38, 10.03, 10.38, 11.32, 7.75, 9.53],
+    'lon': [-14.28, -12.85, -12.08, -10.74, -9.30, -12.28, -8.82, -13.67]
 })
 
-# Création de la carte avec Plotly
 fig_map = px.scatter_mapbox(
     df_map, 
-    lat="lat", 
-    lon="lon", 
-    color="Efficacité (%)", 
-    size="Efficacité (%)",
+    lat="lat", lon="lon", 
+    color="Efficacité (%)", size="Efficacité (%)",
     hover_name="Région", 
-    hover_data={"lat": False, "lon": False, "Efficacité (%)": True},
-    color_continuous_scale="RdYlGn", # Vert pour le succès, Rouge pour les zones à aider
-    size_max=30, 
-    zoom=5.5, 
+    color_continuous_scale="RdYlGn",
+    size_max=25, zoom=5.8, 
     mapbox_style="carto-positron"
 )
-
 # Ajustement de la mise en page pour centrer sur la Guinée
 fig_map.update_layout(
     margin={"r":0,"t":0,"l":0,"b":0},
@@ -173,12 +188,7 @@ st.plotly_chart(fig_map, use_container_width=True)
 st.write("---")
 st.subheader("📝 Synthèse du Diagnostic")
     
-# Fusion des deux analyses dans un seul bloc informatif
-st.info(f"""
-    **Analyse Stratégique & Territoriale :**
-    * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%** par l'intensification technique.
-    * **Focus Régional :** La **Haute Guinée** concentrant 40% de la production, une hausse de rendement de **0.5 T/Ha** dans cette zone réduirait les importations nationales de **15%**.
-    """)
+
 with tab2:
     st.subheader(f"Simulateur Agro-Climatique Avancé : {culture_select}")
     
@@ -466,6 +476,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
