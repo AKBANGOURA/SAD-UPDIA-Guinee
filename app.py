@@ -128,9 +128,9 @@ with c_left:
     # --- ÉTAPE 1 : CALCULS DYNAMIQUES POUR LA SYNTHÈSE ---
     # On trouve la ligne avec la production maximale
 idx_max = df_reg['Production'].idxmax()
-    region_leader = df_reg.loc[idx_max, 'Région']
-    part_production = (df_reg['Production'].max() / base_prod) * 100
-    impact_import = 15 * (part_production / 40) # Calcul d'impact proportionnel
+region_leader = df_reg.loc[idx_max, 'Région']
+part_production = (df_reg['Production'].max() / base_prod) * 100
+impact_import = 15 * (part_production / 40) # Calcul d'impact proportionnel
 
     # --- ÉTAPE 2 : AFFICHAGE DE LA SYNTHÈSE CORRIGÉE ---
     st.write("---")
@@ -474,6 +474,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
