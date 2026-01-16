@@ -77,22 +77,31 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🏭 Transformation & Valeur Ajoutée"
 ])
 
+# --- 1. DÉFINITION DES DONNÉES (À placer avant les onglets) ---
+# Ce dictionnaire assure la cohérence entre les barres, la synthèse et la carte
+potentiels_regionaux = {
+    'Riz': {'Boké': 0.12, 'Kindia': 0.15, 'Mamou': 0.08, 'Faranah': 0.15, 'Kankan': 0.25, 'Labé': 0.10, "N'Zérékoré": 0.14, 'Conakry': 0.01},
+    'Maïs': {'Boké': 0.10, 'Kindia': 0.12, 'Mamou': 0.15, 'Faranah': 0.20, 'Kankan': 0.18, 'Labé': 0.10, "N'Zérékoré": 0.14, 'Conakry': 0.01},
+    'Fonio': {'Boké': 0.05, 'Kindia': 0.08, 'Mamou': 0.20, 'Faranah': 0.15, 'Kankan': 0.12, 'Labé': 0.30, "N'Zérékoré": 0.09, 'Conakry': 0.01},
+    'Cassave': {'Boké': 0.15, 'Kindia': 0.18, 'Mamou': 0.05, 'Faranah': 0.10, 'Kankan': 0.08, 'Labé': 0.07, "N'Zérékoré": 0.35, 'Conakry': 0.02},
+    'Tout': {'Boké': 0.12, 'Kindia': 0.14, 'Mamou': 0.10, 'Faranah': 0.15, 'Kankan': 0.20, 'Labé': 0.12, "N'Zérékoré": 0.16, 'Conakry': 0.01}
+}
+
+# --- 2. CODE DU TAB 1 ---
 with tab1:
     st.subheader(f"📊 Analyse Complète de la Production : {culture_select}")
     
-    # --- SECTION A : MÉTRIQUES D'ORIGINE ---
+    # --- SECTION A : MÉTRIQUES ---
     m1, m2, m3 = st.columns(3)
     m1.metric(f"Production {culture_select}", f"{base_prod:,} T", "+4.2%")
     m2.metric("Objectif National", f"{d['obj_2040']:,} T", "Cible 2040")
-    
     besoin_import_calc = int((d['ratio_besoin'] - 1) * 100)
     m3.metric("Besoin Importé", f"{besoin_import_calc}%", "-2.1%")
 
     st.write("---")
 
-    # --- SECTION B : ANALYSE DES RENDEMENTS & GAP ---
+    # --- SECTION B : RENDEMENTS & GAP ---
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
-    
     rendement_moyen = base_prod / 800000 
     objectif_rendement = d['obj_2040'] / 800000
     gap_rendement = ((objectif_rendement - rendement_moyen) / rendement_moyen) * 100
@@ -106,8 +115,7 @@ with tab1:
     # --- SECTION C : VISUALISATION DYNAMIQUE ---
     c_left, c_right = st.columns(2)
     
-    # ÉTAPE CLÉ : On lie les données de l'histogramme aux potentiels de la culture choisie
-    # Cela évite le décalage avec la carte
+    # Récupération dynamique des données selon la culture choisie
     p_map = potentiels_regionaux.get(culture_select, potentiels_regionaux['Tout'])
     
     df_reg = pd.DataFrame({
@@ -119,8 +127,7 @@ with tab1:
         st.write("**📍 Répartition par Région Administrative**")
         fig_prod = px.bar(
             df_reg, 
-            x='Région', 
-            y='Production', 
+            x='Région', y='Production', 
             color='Production',
             color_continuous_scale='Greens',
             text_auto='.2s',
@@ -143,7 +150,7 @@ with tab1:
         )
         st.plotly_chart(fig_gap, use_container_width=True)
 
-    # --- SECTION D : SYNTHÈSE (Indentation corrigée pour être hors des colonnes) ---
+    # --- SECTION D : SYNTHÈSE DYNAMIQUE ---
     idx_max = df_reg['Production'].idxmax()
     region_leader = df_reg.loc[idx_max, 'Région']
     part_production = (df_reg['Production'].max() / base_prod) * 100
@@ -509,6 +516,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
