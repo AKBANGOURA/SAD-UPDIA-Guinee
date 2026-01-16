@@ -193,6 +193,24 @@ with tab1:
     # --- LIGNES À MODIFIER DANS LA SECTION C (Analyse de l'Objectif 2040) ---
 
 with c_right:
+
+    # --- SECTION E : CARTE DES 33 PRÉFECTURES ---
+    st.write("---")
+    st.subheader(f"📍 Carte de l'Efficacité Territoriale : {culture_select} (33 Préfectures)")
+
+    fig_map = px.scatter_mapbox(
+        df_pref, lat="lat", lon="lon", 
+        color="Efficacité", size="Production",
+        hover_name="Pref", hover_data=["Region", "Production"],
+        color_continuous_scale="RdYlGn", size_max=18, zoom=5.8,
+        mapbox_style="carto-positron"
+    )
+    fig_map.update_layout(
+        margin={"r":0,"t":0,"l":0,"b":0},
+        mapbox=dict(center=dict(lat=10.5, lon=-11.0))
+    )
+    st.plotly_chart(fig_map, use_container_width=True)
+
     st.write("**🎯 Analyse de l'Objectif 2040**")
     df_gap = pd.DataFrame({
         'Indicateur': ['Production Actuelle', 'Déficit à combler'],
@@ -220,23 +238,7 @@ with c_right:
     
     st.plotly_chart(fig_gap, use_container_width=True)
 
-    # --- SECTION E : CARTE DES 33 PRÉFECTURES ---
-    st.write("---")
-    st.subheader(f"📍 Carte de l'Efficacité Territoriale : {culture_select} (33 Préfectures)")
-
-    fig_map = px.scatter_mapbox(
-        df_pref, lat="lat", lon="lon", 
-        color="Efficacité", size="Production",
-        hover_name="Pref", hover_data=["Region", "Production"],
-        color_continuous_scale="RdYlGn", size_max=18, zoom=5.8,
-        mapbox_style="carto-positron"
-    )
-    fig_map.update_layout(
-        margin={"r":0,"t":0,"l":0,"b":0},
-        mapbox=dict(center=dict(lat=10.5, lon=-11.0))
-    )
-    st.plotly_chart(fig_map, use_container_width=True)
-
+    
     # --- SECTION F : SYNTHÈSE DU DIAGNOSTIC INTELLIGENTE ---
     st.write("---")
     st.subheader("📝 Synthèse du Diagnostic Stratégique")
@@ -590,6 +592,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
