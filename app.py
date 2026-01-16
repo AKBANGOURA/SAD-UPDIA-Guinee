@@ -357,53 +357,67 @@ with tab2:
 with tab3:
     st.subheader(f"🎯 Trajectoire de Souveraineté 2026-2040 : {culture_select}")
     
-    # --- 1. TES PARAMÈTRES D'ORIGINE ---
-    tx_croissance = st.slider("Taux de croissance annuel visé (%)", 1, 15, 6)
-    population_growth = 1.025  # +2.5% par an
-    years = list(range(2026, 2042)) # Ta plage d'années d'origine
+    # --- 1. PARAMÈTRES DE SIMULATION ---
+    tx_croissance = st.slider("Taux de croissance annuel visé (%)", 1, 15, 6, key="growth_v")
+    population_growth = 1.025  # Croissance démographique +2.5% par an
+    years = list(range(2026, 2042)) # Projection sur 15 ans
     
     # --- 2. CALCULS DES CHEMINS (PROD VS BESOIN) ---
+    # Production indexée sur le taux choisi
     prod_path = [base_prod * ((1 + tx_croissance/100)**i) for i in range(len(years))]
+    # Besoins indexés sur la démographie et le ratio de départ
     besoin_path = [base_prod * d['ratio_besoin'] * (population_growth ** i) for i in range(len(years))]
     
-    # Ajout de l'analyse nutritionnelle PhD
+    # Analyse nutritionnelle (Hypothèse : 70% de la production destinée à la consommation directe)
     pop_guinee = 14000000 
     dispo_hab = [(p * 0.7 * 1000) / (pop_guinee * (population_growth**i)) for i, p in enumerate(prod_path)]
-    seuil_fao = 100 if culture_select == 'Riz' else 55
+    
+    # Récupération dynamique du seuil FAO depuis votre base de données
+    seuil_fao = d.get('seuil_fao', 50)
 
-    # --- 3. TON GRAPHIQUE D'ORIGINE (Conservé strictement) ---
+    # --- 3. GRAPHIQUE ÉQUILIBRE OFFRE/DEMANDE ---
     df_vision = pd.DataFrame({
         'Année': years, 
         'Production': prod_path, 
         'Besoins Population': besoin_path
     })
     
-    fig_vision = px.line(df_vision, x='Année', y=['Production', 'Besoins Population'],
-                        title=f"Équilibre Offre/Demande : {culture_select}",
-                        color_discrete_map={'Production': '#009460', 'Besoins Population': '#ce1126'})
+    fig_vision = px.line(
+        df_vision, x='Année', y=['Production', 'Besoins Population'],
+        title=f"Équilibre Offre/Demande : {culture_select} (Projection 2040)",
+        color_discrete_map={'Production': '#009460', 'Besoins Population': '#ce1126'}
+    )
+    fig_vision.update_layout(yaxis_title="Volume (Tonnes)", hovermode="x unified")
     st.plotly_chart(fig_vision, use_container_width=True)
 
-    # --- 4. NOUVELLE ANALYSE : SÉCURITÉ ALIMENTAIRE ---
+    # --- 4. ANALYSE DE LA SÉCURITÉ ALIMENTAIRE PAR HABITANT ---
     st.write("---")
     st.write(f"**🥗 Indicateur Social : Disponibilité de {culture_select} par habitant**")
     
-    fig_nutri = px.area(x=years, y=dispo_hab, title="Évolution de la ration (kg/hab/an)",
-                        labels={'x': 'Année', 'y': 'kg/hab/an'})
-    fig_nutri.add_hline(y=seuil_fao, line_dash="dash", line_color="orange", annotation_text="Seuil de sécurité")
+    fig_nutri = px.area(
+        x=years, y=dispo_hab, 
+        title="Évolution de la ration projetée (kg/hab/an)",
+        labels={'x': 'Année', 'y': 'kg/hab/an'},
+        color_discrete_sequence=['#fcd116']
+    )
+    fig_nutri.add_hline(y=seuil_fao, line_dash="dash", line_color="red", 
+                        annotation_text=f"Seuil FAO ({seuil_fao}kg)")
     st.plotly_chart(fig_nutri, use_container_width=True)
 
-    # --- 5. LOGIQUE DE COHÉRENCE STRICTE (Tes messages originaux + Analyse Gap) ---
+    # --- 5. LOGIQUE DE COHÉRENCE ET DIAGNOSTIC FINAL ---
+    # Identification de l'année d'intersection
     annee_auto = next((years[i] for i, (p, b) in enumerate(zip(prod_path, besoin_path)) if p >= b), None)
     
     st.write("---")
     if annee_auto:
-        st.success(f"✅ **SOUVERAINETÉ ATTEINTE** : L'autosuffisance alimentaire est atteinte en **{annee_auto}** pour la culture : **{culture_select}**.")
-        st.info(f"À cette date, la disponibilité par habitant sera de **{int(dispo_hab[years.index(annee_auto)])} kg/an**, dépassant les normes de sécurité.")
+        st.success(f"✅ **SOUVERAINETÉ ATTEINTE** : L'autosuffisance alimentaire est prévue en **{annee_auto}** pour la culture : **{culture_select}**.")
+        idx_auto = years.index(annee_auto)
+        st.info(f"À cette échéance, la disponibilité par habitant sera de **{int(dispo_hab[idx_auto])} kg/an**, garantissant la sécurité alimentaire nationale.")
     else:
-        # Ton calcul de Gap précis que tu voulais garder
+        # Calcul du déficit à l'horizon 2041
         gap_final = int(besoin_path[-1] - prod_path[-1])
-        st.error(f"🚨 **DÉFICIT PRÉVU** : En 2041, un manque de **{gap_final:,} Tonnes** est à prévoir pour le {culture_select}.")
-        st.warning(f"La ration par habitant chutera à **{int(dispo_hab[-1])} kg/an**, soit sous le seuil FAO de {seuil_fao} kg.")
+        st.error(f"🚨 **DÉFICIT PRÉVU** : En 2041, un manque de **{gap_final:,} Tonnes** est à prévoir pour le {culture_select} avec un taux de {tx_croissance}%.")
+        st.warning(f"La ration par habitant de **{int(dispo_hab[-1])} kg/an** restera sous le seuil critique de {seuil_fao} kg.")
 with tab4:
     st.subheader(f"💰 Optimisation du Budget National : {culture_select}")
     
@@ -523,6 +537,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
