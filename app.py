@@ -134,49 +134,57 @@ with tab1:
                          color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'})
         st.plotly_chart(fig_gap, use_container_width=True)
 
-    # --- SECTION D : CARTOGRAPHIE DE L'EFFICACITÉ (Analyse spatiale) ---
-st.write("**📍 Cartographie de l'Efficacité Régionale**")
-
-# Préparation des données avec coordonnées pour le positionnement
-df_map = pd.DataFrame({
-    'Région': ['Basse Guinée', 'Moyenne Guinée', 'Haute Guinée', 'Guinée Forestière'],
-    'Efficacité (%)': [85, 62, 91, 78],
-    'lat': [10.5, 11.2, 10.8, 8.5],  # Coordonnées approximatives des centres régionaux
-    'lon': [-13.5, -11.8, -9.5, -9.2]
-})
-
-# --- SECTION D : CARTOGRAPHIE DYNAMIQUE (CORRIGÉE & TESTÉE) ---
+    # --- SECTION D : CARTOGRAPHIE DYNAMIQUE DE L'EFFICACITÉ (CORRIGÉE) ---
 st.write("---")
-st.write("**📍 Cartographie de l'Efficacité Régionale (Dynamique)**")
+st.subheader("📍 Cartographie de l'Efficacité Régionale")
 
-# --- 1. Utilisation des noms de régions EXACTS du GeoJSON (Standard ISO) ---
-# Note : Les guillemets doubles permettent d'inclure l'apostrophe dans N'Zerekore sans erreur.
-regions_guinee = ["Boke", "Kindia", "Mamou", "Faranah", "Kankan", "Labe", "N'Zerekore"]
+# 1. Liste unifiée des régions administratives (Standard ISO pour GeoJSON)
+regions_guinee = ["Boke", "Kindia", "Mamou", "Faranah", "Kankan", "Labe", "N'Zerekore", "Conakry"]
 
-# --- 2. Dictionnaire de potentiels (ajusté aux noms standards du GeoJSON) ---
-# Ce dictionnaire lie la culture choisie au potentiel agronomique de chaque région administrative.
+# 2. Dictionnaire des potentiels par région administrative
 potentiels = {
-    'Riz': {
-        'Boke': 1.2, 'Kindia': 1.1, 'Mamou': 0.7, 'Faranah': 1.3, 
-        'Kankan': 1.2, 'Labe': 0.6, "N'Zerekore": 1.1
-    },
-    'Maïs': {
-        'Boke': 0.8, 'Kindia': 0.9, 'Mamou': 1.1, 'Faranah': 1.2, 
-        'Kankan': 1.1, 'Labe': 1.0, "N'Zerekore": 1.3
-    },
-    'Fonio': {
-        'Boke': 0.6, 'Kindia': 0.7, 'Mamou': 1.3, 'Faranah': 1.1, 
-        'Kankan': 0.9, 'Labe': 1.4, "N'Zerekore": 0.7
-    },
-    'Cassave': {
-        'Boke': 1.2, 'Kindia': 1.2, 'Mamou': 0.8, 'Faranah': 0.9, 
-        'Kankan': 0.8, 'Labe': 0.7, "N'Zerekore": 1.4
-    },
-    'Tout': {
-        'Boke': 1.0, 'Kindia': 1.0, 'Mamou': 1.0, 'Faranah': 1.0, 
-        'Kankan': 1.0, 'Labe': 1.0, "N'Zerekore": 1.0
-    }
+    'Riz': {'Boke': 1.2, 'Kindia': 1.1, 'Mamou': 0.7, 'Faranah': 1.3, 'Kankan': 1.2, 'Labe': 0.6, "N'Zerekore": 1.1, "Conakry": 0.1},
+    'Maïs': {'Boke': 0.8, 'Kindia': 0.9, 'Mamou': 1.1, 'Faranah': 1.2, 'Kankan': 1.1, 'Labe': 1.0, "N'Zerekore": 1.3, "Conakry": 0.1},
+    'Fonio': {'Boke': 0.6, 'Kindia': 0.7, 'Mamou': 1.3, 'Faranah': 1.1, 'Kankan': 0.9, 'Labe': 1.4, "N'Zerekore": 0.7, "Conakry": 0.1},
+    'Cassave': {'Boke': 1.2, 'Kindia': 1.2, 'Mamou': 0.8, 'Faranah': 0.9, 'Kankan': 0.8, 'Labe': 0.7, "N'Zerekore": 1.4, "Conakry": 0.1},
+    'Tout': {'Boke': 1.0, 'Kindia': 1.0, 'Mamou': 1.0, 'Faranah': 1.0, 'Kankan': 1.0, 'Labe': 1.0, "N'Zerekore": 1.0, "Conakry": 0.5}
 }
+
+# 3. Calcul dynamique de l'efficacité (Filière + Budget)
+# On lie le budget (de la barre latérale) à l'efficacité visuelle
+facteur_budget = budget_total / 2500  # Base 2500 Mds
+filiere_ref = culture_select if culture_select in potentiels else 'Tout'
+
+data_map = []
+for r in regions_guinee:
+    # Calcul du score : Potentiel x Facteur Budget x Score de base (75)
+    score_calc = potentiels[filiere_ref][r] * facteur_budget * 75
+    data_map.append({
+        'Région': r, 
+        'Efficacité (%)': min(100, int(score_calc)) # Plafond à 100%
+    })
+
+df_map_final = pd.DataFrame(data_map)
+
+# 4. Génération de la carte Choroplèthe
+geojson_url = "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/guinea/guinea-regions.json"
+
+fig_map = px.choropleth(
+    df_map_final,
+    geojson=geojson_url,
+    locations="Région",
+    featureidkey="properties.NAME_1",
+    color="Efficacité (%)",
+    color_continuous_scale="RdYlGn",
+    range_color=(40, 100),
+    hover_name="Région",
+    title=f"Performance Territoriale : {culture_select}"
+)
+
+fig_map.update_geos(fitbounds="locations", visible=False)
+fig_map.update_layout(margin={"r":0,"t":0,"l":0,"b":0}, height=500)
+
+st.plotly_chart(fig_map, use_container_width=True)
 # 3. Calcul dynamique basé sur vos sliders (Culture + Budget)
 facteur_budget = budget_total / 2500
 filiere_ref = culture_select if culture_select in potentiels else 'Tout'
@@ -512,6 +520,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
