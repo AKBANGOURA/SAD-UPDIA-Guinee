@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
+import math
 
 # --- 1. CONFIGURATION AVANCÉE ---
 st.set_page_config(page_title="SAD UPDIA - Vision 2040", layout="wide")
@@ -235,65 +236,73 @@ with tab1:
         * **Recommandation :** Cibler les zones affichées en jaune/rouge sur la carte pour une mise à niveau technique immédiate.
     """)
 
-    # --- SECTION : PLAN DE RATTRAPAGE TECHNIQUE & CHRONOGRAMME ---
-    st.write("---")
-    st.subheader(f"🚀 Stratégie de Rattrapage 2026 - 2040 : {culture_select}")
+    # --- SECTION : PLAN DE RATTRAPAGE TECHNIQUE & CHRONOGRAMME (Tab 1) ---
+st.write("---")
+st.subheader(f"🚀 Stratégie de Rattrapage 2026 - 2040 : {culture_select}")
+
+# 1. Paramètres temporels fixes
+annee_actuelle = 2026
+annee_cible = 2040
+nombre_annees = annee_cible - annee_actuelle
+
+deficit_t = max(0, d['obj_2040'] - base_prod)
+
+if deficit_t > 0:
+    # 2. Calcul du CAGR (Taux de Croissance Annuel Composé) requis pour 2040
+    # C'est ce taux qui garantit que l'autosuffisance arrive en 2040 et pas avant
+    taux_croissance = ((d['obj_2040'] / base_prod) ** (1 / nombre_annees)) - 1
+    taux_pourcentage = taux_croissance * 100
+
+    # 3. Affichage des indicateurs de performance temporelle
+    c_time1, c_time2 = st.columns(2)
+    c_time1.metric("Horizon Stratégique", f"{nombre_annees} ans", f"Cible {annee_cible}")
+    # On affiche ce taux comme l'exigence minimale pour respecter l'échéance 2040
+    c_time2.metric("Taux de Croissance Requis", f"{taux_pourcentage:.2f} %", "par an pour 2040", delta_color="normal")
+
+    st.write("") 
+
+    # 4. Besoins en ressources basés sur ce déficit
+    normes = {
+        'Riz': {'semences': 60, 'engrais': 200, 'label': 'Riziculture intensive'},
+        'Fonio': {'semences': 25, 'engrais': 50, 'label': 'Culture résiliente'},
+        'Maïs': {'semences': 20, 'engrais': 250, 'label': 'Exigence azotée'},
+        'Cassave': {'semences': 1000, 'engrais': 100, 'label': 'Boutures'}
+    }
+    tech = normes.get(culture_select, {'semences': 30, 'engrais': 150, 'label': 'Standard'})
     
-    # 1. Paramètres temporels
-    annee_actuelle = 2026
-    annee_cible = 2040
-    nombre_annees = annee_cible - annee_actuelle
+    col_plan1, col_plan2, col_plan3 = st.columns(3)
+    ha_supp = deficit_t / rendement_moyen
+    semences_totales = (ha_supp * tech['semences']) / 1000
+    engrais_total = (ha_supp * tech['engrais']) / 1000
+
+    col_plan1.metric("Terres à mobiliser", f"{ha_supp:,.0f} Ha")
+    unit_s = "T de Boutures" if culture_select == "Cassave" else "T de Semences"
+    col_plan2.metric(f"Besoins {unit_s}", f"{semences_totales:,.1f} T")
+    col_plan3.metric("Besoins Engrais (NPK)", f"{engrais_total:,.1f} T")
+
+    # 5. Trajectoire de référence (Cible 2040)
+    annees_projection = list(range(annee_actuelle, annee_cible + 1))
+    prod_projection = [base_prod * ((1 + taux_croissance) ** (i - annee_actuelle)) for i in annees_projection]
     
-    deficit_t = max(0, d['obj_2040'] - base_prod)
+    df_traj = pd.DataFrame({'Année': annees_projection, 'Production (T)': prod_projection})
+    fig_traj = px.line(df_traj, x='Année', y='Production (T)', 
+                      title=f"Trajectoire de Référence pour l'Indépendance en {annee_cible}")
     
-    if deficit_t > 0:
-        # 2. Calcul du Taux de Croissance Annuel Nécessaire (Formule du CAGR)
-        # Formule : [(Valeur Finale / Valeur Initiale)^(1 / n)] - 1
-        taux_croissance = ((d['obj_2040'] / base_prod) ** (1 / nombre_annees)) - 1
-        taux_pourcentage = taux_croissance * 100
+    # Ligne d'objectif
+    fig_traj.add_hline(y=d['obj_2040'], line_dash="dash", line_color="red", annotation_text="Objectif 2040")
+    
+    # Point d'arrivée (Validation visuelle de la cohérence)
+    fig_traj.add_scatter(x=[annee_cible], y=[d['obj_2040']], mode='markers+text', 
+                         text=["Cible"], textposition="top center", name="Objectif")
+    
+    st.plotly_chart(fig_traj, use_container_width=True)
 
-        # 3. Affichage du Chronogramme
-        c_time1, c_time2 = st.columns(2)
-        c_time1.metric("Horizon Temporel", f"{nombre_annees} ans", f"Cible {annee_cible}")
-        c_time2.metric("Taux de Croissance Annuel Requis", f"{taux_pourcentage:.2f} %", "par an", delta_color="inverse")
-
-        st.write("") # Espacement
-
-        # 4. Standards techniques par culture
-        normes = {
-            'Riz': {'semences': 60, 'engrais': 200, 'label': 'Riziculture intensive'},
-            'Fonio': {'semences': 25, 'engrais': 50, 'label': 'Culture résiliente'},
-            'Maïs': {'semences': 20, 'engrais': 250, 'label': 'Exigence azotée'},
-            'Cassave': {'semences': 1000, 'engrais': 100, 'label': 'Boutures'}
-        }
-        tech = normes.get(culture_select, {'semences': 30, 'engrais': 150, 'label': 'Standard'})
-        
-        col_plan1, col_plan2, col_plan3 = st.columns(3)
-        ha_supp = deficit_t / rendement_moyen
-        semences_totales = (ha_supp * tech['semences']) / 1000
-        engrais_total = (ha_supp * tech['engrais']) / 1000
-
-        col_plan1.metric("Terres à mobiliser", f"{ha_supp:,.0f} Ha")
-        unit_s = "T de Boutures" if culture_select == "Cassave" else "T de Semences"
-        col_plan2.metric(f"Total {unit_s}", f"{semences_totales:,.1f} T")
-        col_plan3.metric("Total Engrais (NPK)", f"{engrais_total:,.1f} T")
-
-        # 5. Graphique de trajectoire théorique
-        annees_projection = list(range(annee_actuelle, annee_cible + 1))
-        prod_projection = [base_prod * ((1 + taux_croissance) ** (i - annee_actuelle)) for i in annees_projection]
-        
-        df_traj = pd.DataFrame({'Année': annees_projection, 'Production (T)': prod_projection})
-        fig_traj = px.line(df_traj, x='Année', y='Production (T)', 
-                          title=f"Trajectoire de Souveraineté Recommandée (+{taux_pourcentage:.1f}% / an)")
-        fig_traj.add_hline(y=d['obj_2040'], line_dash="dash", line_color="red", annotation_text="Objectif 2040")
-        st.plotly_chart(fig_traj, use_container_width=True)
-
-        st.info(f"""
-            **Verdict de l'Analyse :** Pour combler le déficit de **{deficit_t:,.0f} T** d'ici **{annee_cible}**, la filière **{culture_select}** doit maintenir une croissance soutenue de **{taux_pourcentage:.2f}% chaque année**. 
-            Cela nécessite un alignement strict entre l'extension des surfaces et l'amélioration des rendements.
-        """)
-    else:
-        st.success(f"✅ L'objectif 2040 pour le {culture_select} est sécurisé au rythme actuel.")
+    st.info(f"""
+        **Verdict Cohérent :** Pour combler le déficit d'ici **{annee_cible}** (dans **{nombre_annees} ans**), un taux de **{taux_pourcentage:.2f}%** est strictement nécessaire. 
+        Toute simulation dans l'onglet 'Vision 2040' avec un taux supérieur (ex: 7%) avancera logiquement la date d'autosuffisance.
+    """)
+else:
+    st.success(f"✅ L'objectif 2040 pour le {culture_select} est déjà couvert par la production actuelle.")
     # Exportation CSV
     export_df = df_pref[['Region', 'Pref', 'Production', 'Efficacité']].copy()
     csv = export_df.to_csv(index=False).encode('utf-8')
@@ -433,22 +442,39 @@ with tab2:
 with tab3:
     st.subheader(f"🎯 Trajectoire de Souveraineté 2026-2040 : {culture_select}")
     
-    # --- 1. PARAMÈTRES DE SIMULATION ---
-    tx_croissance = st.slider("Taux de croissance annuel visé (%)", 1, 15, 6, key="growth_v")
+    # --- 1. PARAMÈTRES DE SIMULATION (AJUSTÉS POUR LA COHÉRENCE) ---
+    # Calcul dynamique du taux nécessaire pour 2040 pour guider l'utilisateur
+    annee_actuelle = 2026
+    annee_cible = 2040
+    nb_annees = annee_cible - annee_actuelle
+    taux_requis_2040 = ((d['obj_2040'] / base_prod) ** (1 / nb_annees)) - 1
+    
+    # On affiche l'information pour que l'utilisateur comprenne le point de départ
+    st.info(f"💡 Note : Le taux requis pour atteindre l'objectif en 2040 est de **{taux_requis_2040*100:.2f}%**.")
+
+    # Slider : On met le taux requis comme valeur par défaut au lieu de 6%
+    tx_croissance = st.slider(
+        "Taux de croissance annuel visé (%)", 
+        1.0, 15.0, 
+        float(round(taux_requis_2040 * 100, 1)), 
+        key="growth_v"
+    )
+    
     population_growth = 1.025  # Croissance démographique +2.5% par an
-    years = list(range(2026, 2042)) # Projection sur 15 ans
+    years = list(range(2026, 2042)) 
     
     # --- 2. CALCULS DES CHEMINS (PROD VS BESOIN) ---
     # Production indexée sur le taux choisi
     prod_path = [base_prod * ((1 + tx_croissance/100)**i) for i in range(len(years))]
+    
     # Besoins indexés sur la démographie et le ratio de départ
+    # Note : On utilise le besoin réel (base * ratio) pour la courbe de départ
     besoin_path = [base_prod * d['ratio_besoin'] * (population_growth ** i) for i in range(len(years))]
     
-    # Analyse nutritionnelle (Hypothèse : 70% de la production destinée à la consommation directe)
+    # Analyse nutritionnelle
     pop_guinee = 14000000 
     dispo_hab = [(p * 0.7 * 1000) / (pop_guinee * (population_growth**i)) for i, p in enumerate(prod_path)]
     
-    # Récupération dynamique du seuil FAO depuis votre base de données
     seuil_fao = d.get('seuil_fao', 50)
 
     # --- 3. GRAPHIQUE ÉQUILIBRE OFFRE/DEMANDE ---
@@ -463,6 +489,15 @@ with tab3:
         title=f"Équilibre Offre/Demande : {culture_select} (Projection 2040)",
         color_discrete_map={'Production': '#009460', 'Besoins Population': '#ce1126'}
     )
+    
+    # Identification de l'année d'intersection (Année d'autosuffisance)
+    annee_auto = next((years[i] for i, (p, b) in enumerate(zip(prod_path, besoin_path)) if p >= b), None)
+    
+    # Ajout de la ligne verticale d'autosuffisance si elle existe
+    if annee_auto:
+        fig_vision.add_vline(x=annee_auto, line_dash="dot", line_color="blue", 
+                             annotation_text=f"Autosuffisance {annee_auto}")
+
     fig_vision.update_layout(yaxis_title="Volume (Tonnes)", hovermode="x unified")
     st.plotly_chart(fig_vision, use_container_width=True)
 
@@ -481,20 +516,20 @@ with tab3:
     st.plotly_chart(fig_nutri, use_container_width=True)
 
     # --- 5. LOGIQUE DE COHÉRENCE ET DIAGNOSTIC FINAL ---
-    # Identification de l'année d'intersection
-    annee_auto = next((years[i] for i, (p, b) in enumerate(zip(prod_path, besoin_path)) if p >= b), None)
-    
     st.write("---")
     if annee_auto:
-        st.success(f"✅ **SOUVERAINETÉ ATTEINTE** : L'autosuffisance alimentaire est prévue en **{annee_auto}** pour la culture : **{culture_select}**.")
+        status_msg = "SOUVERAINETÉ ATTEINTE"
+        if annee_auto <= 2040:
+            st.success(f"✅ **{status_msg}** : L'autosuffisance est prévue en **{annee_auto}**. Scénario conforme aux objectifs.")
+        else:
+            st.warning(f"⚠️ **{status_msg} RETARDÉE** : L'autosuffisance arrive en **{annee_auto}** (après 2040).")
+            
         idx_auto = years.index(annee_auto)
-        st.info(f"À cette échéance, la disponibilité par habitant sera de **{int(dispo_hab[idx_auto])} kg/an**, garantissant la sécurité alimentaire nationale.")
+        st.info(f"À cette échéance, la disponibilité sera de **{int(dispo_hab[idx_auto])} kg/an**, garantissant la sécurité alimentaire.")
     else:
-        # Calcul du déficit à l'horizon 2041
         gap_final = int(besoin_path[-1] - prod_path[-1])
-        st.error(f"🚨 **DÉFICIT PRÉVU** : En 2041, un manque de **{gap_final:,} Tonnes** est à prévoir pour le {culture_select} avec un taux de {tx_croissance}%.")
-        st.warning(f"La ration par habitant de **{int(dispo_hab[-1])} kg/an** restera sous le seuil critique de {seuil_fao} kg.")
-
+        st.error(f"🚨 **DÉFICIT PRÉVU** : En 2041, un manque de **{gap_final:,} Tonnes** est à prévoir avec un taux de {tx_croissance}%.")
+        st.warning(f"La ration de **{int(dispo_hab[-1])} kg/an** restera sous le seuil critique.")
 with tab4:
     st.subheader(f"💰 Optimisation du Budget National : {culture_select}")
     
@@ -642,6 +677,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
