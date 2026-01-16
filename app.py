@@ -133,10 +133,10 @@ part_production = (df_reg['Production'].max() / base_prod) * 100
 impact_import = 15 * (part_production / 40) # Calcul d'impact proportionnel
 
     # --- ÉTAPE 2 : AFFICHAGE DE LA SYNTHÈSE CORRIGÉE ---
-    st.write("---")
-    st.subheader("📝 Synthèse du Diagnostic")
+st.write("---")
+st.subheader("📝 Synthèse du Diagnostic")
     
-    st.info(f"""
+st.info(f"""
         **Analyse Stratégique & Territoriale :**
         * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%** par l'intensification technique.
         * **Focus Régional :** La région de **{region_leader}** concentrant **{part_production:.0f}%** de la production, une hausse de rendement de **0.5 T/Ha** dans cette zone administrative réduirait les importations nationales de **{impact_import:.1f}%**.
@@ -474,6 +474,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
