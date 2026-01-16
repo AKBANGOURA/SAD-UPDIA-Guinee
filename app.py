@@ -167,10 +167,11 @@ with c_right:
                          color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'})
         st.plotly_chart(fig_gap, use_container_width=True)
 
-    # --- SECTION E : CARTOGRAPHIE ---
+    # --- SECTION E : CARTOGRAPHIE (FOCUS GUINÉE CLAIRE / EXTERIEUR SOMBRE) ---
 st.write("---")
 st.subheader("📍 Cartographie de l'Efficacité Régionale")
 
+# Votre DataFrame reste inchangé
 df_map = pd.DataFrame({
     'Région': ['Boké', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labé', "N'Zérékoré", 'Conakry'],
     'Efficacité (%)': [82, 78, 65, 88, 92, 70, 85, 40],
@@ -186,28 +187,31 @@ fig_map = px.scatter_mapbox(
     hover_name="Région", 
     color_continuous_scale="RdYlGn",
     size_max=20, zoom=5.8,
-    mapbox_style="carto-darkmatter" # Fond sombre par défaut
+    mapbox_style="carto-positron" # On commence par un fond clair
 )
 
 fig_map.update_layout(
     margin={"r":0,"t":0,"l":0,"b":0},
-    mapbox=dict(
-        center=dict(lat=10.5, lon=-11.0),
-        # On ajoute une couche de fond claire uniquement sous la zone Guinée si nécessaire
-        # Mais le plus efficace est de régler l'opacité des points
-    )
+    mapbox=dict(center=dict(lat=10.5, lon=-11.0)),
+    showlegend=False
 )
 
-# Rendre les frontières de la Guinée très visibles
+# --- LA MAGIE DU CONTRASTE ---
 fig_map.update_geos(
     visible=True,
     showcountries=True,
-    countrycolor="white", # Frontière blanche pour détacher la Guinée du fond sombre
+    countrycolor="#444444", # Frontières des pays voisins visibles mais discrètes
     showland=True,
-    landcolor="#222222", # Terre sombre
+    landcolor="white",      # Le territoire guinéen reste BLANC/CLAIR
     showocean=True,
-    oceancolor="black"    # Océan noir pour un contraste maximal
+    oceancolor="#111111",   # L'océan devient NOIR
+    showlakes=True,
+    lakecolor="#111111",
+    bgcolor="#000000"       # Le fond derrière la carte est NOIR
 )
+
+# On force l'affichage des frontières pour bien découper la forme de la Guinée
+fig_map.update_traces(marker=dict(opacity=0.9))
 
 st.plotly_chart(fig_map, use_container_width=True)
 
@@ -504,6 +508,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
