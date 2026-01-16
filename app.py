@@ -110,7 +110,6 @@ with tab1:
     c_left, c_right = st.columns(2)
     
 with c_left:
-        # VOTRE GRAPHIQUE RÉGIONAL MIS À JOUR (8 RÉGIONS)
         st.write("**📍 Répartition par Région Administrative**")
         df_reg = pd.DataFrame({
             'Région': ['Boké', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labé', "N'Zérékoré", 'Conakry'],
@@ -120,9 +119,23 @@ with c_left:
                 base_prod*0.14, base_prod*0.01
             ]
         })
-        fig_prod = px.bar(df_reg, x='Région', y='Production', 
-                          color='Région', 
-                          color_discrete_sequence=px.colors.sequential.Greens_r)
+        
+        # On trie les données pour que la dégradation soit fluide
+        df_reg = df_reg.sort_values(by='Production', ascending=False)
+
+        fig_prod = px.bar(
+            df_reg, 
+            x='Région', 
+            y='Production', 
+            color='Production', # On colore selon la valeur pour la dégradation
+            color_continuous_scale='Greens', # Dégradation du clair au foncé
+            text_auto='.2s', # Affiche les quantités au sommet (ex: 140k)
+        )
+
+        # Amélioration du style et positionnement du texte
+        fig_prod.update_traces(textposition='outside', cliponaxis=False)
+        fig_prod.update_layout(showlegend=False, coloraxis_showscale=False)
+        
         st.plotly_chart(fig_prod, use_container_width=True)
 
     # --- ÉTAPE 1 : CALCULS DYNAMIQUES POUR LA SYNTHÈSE ---
@@ -474,6 +487,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
