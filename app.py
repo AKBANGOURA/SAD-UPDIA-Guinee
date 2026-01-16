@@ -151,7 +151,7 @@ st.write("**📍 Cartographie de l'Efficacité Régionale (Dynamique)**")
 
 # 1. Utilisation des noms de régions EXACTS du GeoJSON (Standard ISO)
 # Note : Les noms doivent correspondre à la propriété 'NAME_1' du GeoJSON
-regions_guinee = ['Boke', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labe', 'N'Zerekore']
+regions_guinee = ['Boke', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labe', 'NZerekore']
 
 # 2. Dictionnaire de potentiels (ajusté aux noms sans accents pour éviter les bugs d'encodage)
 potentiels = {
@@ -497,6 +497,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
