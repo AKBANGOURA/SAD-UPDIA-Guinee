@@ -167,14 +167,29 @@ with c_right:
                          color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'})
         st.plotly_chart(fig_gap, use_container_width=True)
 
-    # --- SECTION E : CARTOGRAPHIE (FOCUS GUINÉE CLAIRE / EXTERIEUR SOMBRE) ---
-st.write("---")
-st.subheader("📍 Cartographie de l'Efficacité Régionale")
+    # --- 1. DÉFINITION DES POTENTIELS RÉGIONAUX (À placer au début du code ou avant l'onglet) ---
+# Ces coefficients (0.1 à 1.4) simulent les aptitudes agro-climatiques réelles
+potentiels_regionaux = {
+    'Riz': {'Boké': 0.85, 'Kindia': 0.90, 'Mamou': 0.60, 'Faranah': 0.95, 'Kankan': 1.20, 'Labé': 0.50, "N'Zérékoré": 1.10, 'Conakry': 0.20},
+    'Maïs': {'Boké': 0.70, 'Kindia': 0.85, 'Mamou': 0.90, 'Faranah': 1.10, 'Kankan': 1.05, 'Labé': 0.80, "N'Zérékoré": 1.25, 'Conakry': 0.15},
+    'Fonio': {'Boké': 0.50, 'Kindia': 0.65, 'Mamou': 1.30, 'Faranah': 1.15, 'Kankan': 0.90, 'Labé': 1.40, "N'Zérékoré": 0.60, 'Conakry': 0.10},
+    'Cassave': {'Boké': 1.10, 'Kindia': 1.15, 'Mamou': 0.75, 'Faranah': 0.85, 'Kankan': 0.70, 'Labé': 0.65, "N'Zérékoré": 1.35, 'Conakry': 0.30},
+    'Tout': {'Boké': 0.90, 'Kindia': 0.95, 'Mamou': 0.85, 'Faranah': 1.00, 'Kankan': 1.10, 'Labé': 0.80, "N'Zérékoré": 1.15, 'Conakry': 0.25}
+}
 
-# Votre DataFrame reste inchangé
+# --- 2. LOGIQUE DE LA CARTE DYNAMIQUE DANS L'ONGLET 1 ---
+st.write("---")
+st.subheader(f"📍 Carte Dynamique de l'Efficacité : {culture_select}")
+
+# Sélection du dictionnaire de potentiel selon la culture choisie
+culture_key = culture_select if culture_select in potentiels_regionaux else 'Tout'
+data_potentiel = potentiels_regionaux[culture_key]
+
+# Création du DataFrame dynamique
 df_map = pd.DataFrame({
-    'Région': ['Boké', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labé', "N'Zérékoré", 'Conakry'],
-    'Efficacité (%)': [82, 78, 65, 88, 92, 70, 85, 40],
+    'Région': list(data_potentiel.keys()),
+    # L'efficacité est le potentiel * 80 (pour avoir un score sur 100)
+    'Efficacité (%)': [v * 80 for v in data_potentiel.values()],
     'lat': [11.05, 10.05, 10.38, 10.03, 10.38, 11.32, 7.75, 9.53],
     'lon': [-14.28, -12.85, -12.08, -10.74, -9.30, -12.28, -8.82, -13.67]
 })
@@ -186,32 +201,28 @@ fig_map = px.scatter_mapbox(
     size="Efficacité (%)",
     hover_name="Région", 
     color_continuous_scale="RdYlGn",
-    size_max=20, zoom=5.8,
-    mapbox_style="carto-positron" # On commence par un fond clair
+    size_max=22, zoom=5.8,
+    mapbox_style="carto-positron",
+    title=f"Potentiel Agricole : {culture_select}"
 )
 
+# --- 3. EFFET PROJECTEUR (GUINÉE CLAIRE / EXTERIEUR SOMBRE) ---
 fig_map.update_layout(
-    margin={"r":0,"t":0,"l":0,"b":0},
+    margin={"r":0,"t":30,"l":0,"b":0},
     mapbox=dict(center=dict(lat=10.5, lon=-11.0)),
-    showlegend=False
+    paper_bgcolor="rgba(0,0,0,0)", # Fond transparent pour Streamlit
 )
 
-# --- LA MAGIE DU CONTRASTE ---
 fig_map.update_geos(
     visible=True,
     showcountries=True,
-    countrycolor="#444444", # Frontières des pays voisins visibles mais discrètes
+    countrycolor="#222222", # Pays voisins sombres
     showland=True,
-    landcolor="white",      # Le territoire guinéen reste BLANC/CLAIR
+    landcolor="white",      # Guinée Claire
     showocean=True,
-    oceancolor="#111111",   # L'océan devient NOIR
-    showlakes=True,
-    lakecolor="#111111",
-    bgcolor="#000000"       # Le fond derrière la carte est NOIR
+    oceancolor="#0f172a",   # Océan Bleu-Noir profond
+    bgcolor="#0f172a"       # Fond de carte sombre
 )
-
-# On force l'affichage des frontières pour bien découper la forme de la Guinée
-fig_map.update_traces(marker=dict(opacity=0.9))
 
 st.plotly_chart(fig_map, use_container_width=True)
 
@@ -508,6 +519,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
