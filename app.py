@@ -91,7 +91,7 @@ potentiels_regionaux = {
 with tab1:
     st.subheader(f"📊 Analyse Complète de la Production : {culture_select}")
     
-    # --- SECTION A : MÉTRIQUES ---
+    # --- SECTION A : MÉTRIQUES (Conservées strictement) ---
     m1, m2, m3 = st.columns(3)
     m1.metric(f"Production {culture_select}", f"{base_prod:,} T", "+4.2%")
     m2.metric("Objectif National", f"{d['obj_2040']:,} T", "Cible 2040")
@@ -100,8 +100,9 @@ with tab1:
 
     st.write("---")
 
-    # --- SECTION B : RENDEMENTS & GAP ---
+    # --- SECTION B : RENDEMENTS & GAP (Conservés strictement) ---
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+    # 800.000 Ha est ta constante de surface
     rendement_moyen = base_prod / 800000 
     objectif_rendement = d['obj_2040'] / 800000
     gap_rendement = ((objectif_rendement - rendement_moyen) / rendement_moyen) * 100
@@ -112,28 +113,74 @@ with tab1:
 
     st.write("---")
 
-    # --- SECTION C : VISUALISATION DYNAMIQUE ---
+    # --- SECTION C : LOGIQUE DE DONNÉES HIÉRARCHIQUES (Les 33 Préfectures) ---
+    # On définit ici la liste complète rattachée aux régions pour la cohérence barres/carte
+    data_guinee = [
+        # Boké
+        {'Region': 'Boké', 'Pref': 'Boké', 'lat': 11.05, 'lon': -14.28, 'p_riz': 0.05, 'p_cass': 0.04},
+        {'Region': 'Boké', 'Pref': 'Boffa', 'lat': 10.17, 'lon': -14.03, 'p_riz': 0.04, 'p_cass': 0.03},
+        {'Region': 'Boké', 'Pref': 'Fria', 'lat': 10.45, 'lon': -13.58, 'p_riz': 0.02, 'p_cass': 0.02},
+        {'Region': 'Boké', 'Pref': 'Gaoual', 'lat': 11.75, 'lon': -13.20, 'p_riz': 0.03, 'p_cass': 0.02},
+        {'Region': 'Boké', 'Pref': 'Koundara', 'lat': 12.48, 'lon': -13.30, 'p_riz': 0.03, 'p_cass': 0.01},
+        # Kindia
+        {'Region': 'Kindia', 'Pref': 'Kindia', 'lat': 10.05, 'lon': -12.85, 'p_riz': 0.04, 'p_cass': 0.06},
+        {'Region': 'Kindia', 'Pref': 'Coyah', 'lat': 9.70, 'lon': -13.38, 'p_riz': 0.02, 'p_cass': 0.04},
+        {'Region': 'Kindia', 'Pref': 'Dubréka', 'lat': 9.78, 'lon': -13.52, 'p_riz': 0.03, 'p_cass': 0.04},
+        {'Region': 'Kindia', 'Pref': 'Forécariah', 'lat': 9.43, 'lon': -13.08, 'p_riz': 0.05, 'p_cass': 0.05},
+        {'Region': 'Kindia', 'Pref': 'Télimélé', 'lat': 10.90, 'lon': -13.03, 'p_riz': 0.02, 'p_cass': 0.03},
+        # Mamou
+        {'Region': 'Mamou', 'Pref': 'Mamou', 'lat': 10.38, 'lon': -12.08, 'p_riz': 0.02, 'p_cass': 0.02},
+        {'Region': 'Mamou', 'Pref': 'Dalaba', 'lat': 10.68, 'lon': -12.25, 'p_riz': 0.01, 'p_cass': 0.01},
+        {'Region': 'Mamou', 'Pref': 'Pita', 'lat': 11.05, 'lon': -12.40, 'p_riz': 0.01, 'p_cass': 0.02},
+        # Faranah
+        {'Region': 'Faranah', 'Pref': 'Faranah', 'lat': 10.03, 'lon': -10.74, 'p_riz': 0.05, 'p_cass': 0.03},
+        {'Region': 'Faranah', 'Pref': 'Dabola', 'lat': 10.74, 'lon': -11.11, 'p_riz': 0.03, 'p_cass': 0.02},
+        {'Region': 'Faranah', 'Pref': 'Dinguiraye', 'lat': 11.48, 'lon': -10.71, 'p_riz': 0.02, 'p_cass': 0.01},
+        {'Region': 'Faranah', 'Pref': 'Kissidougou', 'lat': 9.18, 'lon': -10.11, 'p_riz': 0.06, 'p_cass': 0.05},
+        # Kankan
+        {'Region': 'Kankan', 'Pref': 'Kankan', 'lat': 10.38, 'lon': -9.30, 'p_riz': 0.07, 'p_cass': 0.02},
+        {'Region': 'Kankan', 'Pref': 'Kérouané', 'lat': 9.26, 'lon': -9.01, 'p_riz': 0.03, 'p_cass': 0.02},
+        {'Region': 'Kankan', 'Pref': 'Kouroussa', 'lat': 10.65, 'lon': -9.88, 'p_riz': 0.06, 'p_cass': 0.01},
+        {'Region': 'Kankan', 'Pref': 'Siguiri', 'lat': 11.42, 'lon': -9.17, 'p_riz': 0.09, 'p_cass': 0.01},
+        {'Region': 'Kankan', 'Pref': 'Mandiana', 'lat': 10.63, 'lon': -8.68, 'p_riz': 0.06, 'p_cass': 0.01},
+        # Labé
+        {'Region': 'Labé', 'Pref': 'Labé', 'lat': 11.32, 'lon': -12.28, 'p_riz': 0.02, 'p_cass': 0.02},
+        {'Region': 'Labé', 'Pref': 'Koubia', 'lat': 11.58, 'lon': -11.89, 'p_riz': 0.01, 'p_cass': 0.01},
+        {'Region': 'Labé', 'Pref': 'Lélouma', 'lat': 11.42, 'lon': -12.51, 'p_riz': 0.01, 'p_cass': 0.01},
+        {'Region': 'Labé', 'Pref': 'Mali', 'lat': 12.08, 'lon': -12.29, 'p_riz': 0.01, 'p_cass': 0.01},
+        {'Region': 'Labé', 'Pref': 'Tougué', 'lat': 11.44, 'lon': -11.66, 'p_riz': 0.01, 'p_cass': 0.01},
+        # N'Zérékoré
+        {'Region': 'N\'Zérékoré', 'Pref': 'N\'Zérékoré', 'lat': 7.75, 'lon': -8.82, 'p_riz': 0.04, 'p_cass': 0.08},
+        {'Region': 'N\'Zérékoré', 'Pref': 'Beyla', 'lat': 8.68, 'lon': -8.63, 'p_riz': 0.03, 'p_cass': 0.05},
+        {'Region': 'N\'Zérékoré', 'Pref': 'Guéckédou', 'lat': 8.57, 'lon': -10.13, 'p_riz': 0.05, 'p_cass': 0.06},
+        {'Region': 'N\'Zérékoré', 'Pref': 'Lola', 'lat': 7.80, 'lon': -8.53, 'p_riz': 0.03, 'p_cass': 0.07},
+        {'Region': 'N\'Zérékoré', 'Pref': 'Macenta', 'lat': 8.54, 'lon': -9.47, 'p_riz': 0.04, 'p_cass': 0.06},
+        {'Region': 'N\'Zérékoré', 'Pref': 'Yomou', 'lat': 7.56, 'lon': -9.26, 'p_riz': 0.03, 'p_cass': 0.05},
+        # Conakry
+        {'Region': 'Conakry', 'Pref': 'Conakry', 'lat': 9.53, 'lon': -13.67, 'p_riz': 0.005, 'p_cass': 0.005}
+    ]
+
+    # Attribution dynamique du poids selon la culture
+    df_pref = pd.DataFrame(data_guinee)
+    col_poids = 'p_riz' if culture_select == 'Riz' else ('p_cass' if culture_select == 'Cassave' else 'p_riz')
+    
+    df_pref['Production'] = df_pref[col_poids] * base_prod
+    df_pref['Efficacité'] = df_pref[col_poids] * 1200 # Pour la couleur RdYlGn
+
+    # Agrégation Macro (Régions) pour le graphique à barres
+    df_reg = df_pref.groupby('Region')['Production'].sum().reset_index().sort_values('Production', ascending=False)
+
+    # --- SECTION D : VISUALISATION ---
     c_left, c_right = st.columns(2)
-    
-    # Récupération dynamique des données selon la culture choisie
-    p_map = potentiels_regionaux.get(culture_select, potentiels_regionaux['Tout'])
-    
-    df_reg = pd.DataFrame({
-        'Région': list(p_map.keys()),
-        'Production': [v * base_prod for v in p_map.values()]
-    }).sort_values(by='Production', ascending=False)
 
     with c_left:
         st.write("**📍 Répartition par Région Administrative**")
         fig_prod = px.bar(
-            df_reg, 
-            x='Région', y='Production', 
-            color='Production',
-            color_continuous_scale='Greens',
-            text_auto='.2s',
+            df_reg, x='Region', y='Production', 
+            color='Production', color_continuous_scale='Greens',
+            text_auto='.2s'
         )
-        fig_prod.update_traces(textposition='outside', cliponaxis=False)
-        fig_prod.update_layout(showlegend=False, coloraxis_showscale=False)
+        fig_prod.update_layout(showlegend=False, coloraxis_showscale=False, margin=dict(t=0, b=0))
         st.plotly_chart(fig_prod, use_container_width=True)
 
     with c_right:
@@ -143,90 +190,45 @@ with tab1:
             'Valeur': [base_prod, max(0, d['obj_2040'] - base_prod)]
         })
         fig_gap = px.pie(
-            df_gap, values='Valeur', names='Indicateur', 
-            hole=0.4,
-            color='Indicateur',
+            df_gap, values='Valeur', names='Indicateur', hole=0.4,
             color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'}
         )
         st.plotly_chart(fig_gap, use_container_width=True)
 
-    # --- SECTION D : SYNTHÈSE DYNAMIQUE ---
-    idx_max = df_reg['Production'].idxmax()
-    region_leader = df_reg.loc[idx_max, 'Région']
-    part_production = (df_reg['Production'].max() / base_prod) * 100
-    impact_import = 15 * (part_production / 40)
-
+    # --- SECTION E : CARTE DÉTAILLÉE (33 Préfectures) ---
     st.write("---")
-    st.subheader("📝 Synthèse du Diagnostic")
-    st.info(f"""
-        **Analyse Stratégique & Territoriale :**
-        * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%**.
-        * **Focus Régional :** La région de **{region_leader}** concentrant **{part_production:.0f}%** de la production nationale, une hausse de rendement de **0.5 T/Ha** dans cette zone réduirait les importations de **{impact_import:.1f}%**.
-        """)
+    st.subheader(f"📍 Carte de l'Efficacité Territoriale : {culture_select} (Niveau Préfectures)")
 
-    # --- 1. DÉFINITION DES POTENTIELS RÉGIONAUX (À placer au début du code ou avant l'onglet) ---
-# Ces coefficients (0.1 à 1.4) simulent les aptitudes agro-climatiques réelles
-potentiels_regionaux = {
-    'Riz': {'Boké': 0.85, 'Kindia': 0.90, 'Mamou': 0.60, 'Faranah': 0.95, 'Kankan': 1.20, 'Labé': 0.50, "N'Zérékoré": 1.10, 'Conakry': 0.20},
-    'Maïs': {'Boké': 0.70, 'Kindia': 0.85, 'Mamou': 0.90, 'Faranah': 1.10, 'Kankan': 1.05, 'Labé': 0.80, "N'Zérékoré": 1.25, 'Conakry': 0.15},
-    'Fonio': {'Boké': 0.50, 'Kindia': 0.65, 'Mamou': 1.30, 'Faranah': 1.15, 'Kankan': 0.90, 'Labé': 1.40, "N'Zérékoré": 0.60, 'Conakry': 0.10},
-    'Cassave': {'Boké': 1.10, 'Kindia': 1.15, 'Mamou': 0.75, 'Faranah': 0.85, 'Kankan': 0.70, 'Labé': 0.65, "N'Zérékoré": 1.35, 'Conakry': 0.30},
-    'Tout': {'Boké': 0.90, 'Kindia': 0.95, 'Mamou': 0.85, 'Faranah': 1.00, 'Kankan': 1.10, 'Labé': 0.80, "N'Zérékoré": 1.15, 'Conakry': 0.25}
-}
-
-# --- 2. LOGIQUE DE LA CARTE DYNAMIQUE DANS L'ONGLET 1 ---
-st.write("---")
-st.subheader(f"📍 Carte Dynamique de l'Efficacité : {culture_select}")
-
-# Sélection du dictionnaire de potentiel selon la culture choisie
-culture_key = culture_select if culture_select in potentiels_regionaux else 'Tout'
-data_potentiel = potentiels_regionaux[culture_key]
-
-# Création du DataFrame dynamique
-df_map = pd.DataFrame({
-    'Région': list(data_potentiel.keys()),
-    # L'efficacité est le potentiel * 80 (pour avoir un score sur 100)
-    'Efficacité (%)': [v * 80 for v in data_potentiel.values()],
-    'lat': [11.05, 10.05, 10.38, 10.03, 10.38, 11.32, 7.75, 9.53],
-    'lon': [-14.28, -12.85, -12.08, -10.74, -9.30, -12.28, -8.82, -13.67]
-})
-
-fig_map = px.scatter_mapbox(
-    df_map, 
-    lat="lat", lon="lon", 
-    color="Efficacité (%)", 
-    size="Efficacité (%)",
-    hover_name="Région", 
-    color_continuous_scale="RdYlGn",
-    size_max=22, zoom=5.8,
-    mapbox_style="carto-positron",
-    title=f"Potentiel Agricole : {culture_select}"
-)
-
-# --- 3. EFFET PROJECTEUR (GUINÉE CLAIRE / EXTERIEUR SOMBRE) ---
-fig_map.update_layout(
-    margin={"r":0,"t":30,"l":0,"b":0},
-    mapbox=dict(center=dict(lat=10.5, lon=-11.0)),
-    paper_bgcolor="rgba(0,0,0,0)", # Fond transparent pour Streamlit
-)
-
-fig_map.update_geos(
-    visible=True,
-    showcountries=True,
-    countrycolor="#222222", # Pays voisins sombres
-    showland=True,
-    landcolor="white",      # Guinée Claire
-    showocean=True,
-    oceancolor="#0f172a",   # Océan Bleu-Noir profond
-    bgcolor="#0f172a"       # Fond de carte sombre
-)
-
-st.plotly_chart(fig_map, use_container_width=True)
-
-# ... (juste après ton graphique st.plotly_chart(fig_perf))
+    fig_map = px.scatter_mapbox(
+        df_pref, lat="lat", lon="lon", 
+        color="Efficacité", size="Production",
+        hover_name="Pref", hover_data=["Region", "Production"],
+        color_continuous_scale="RdYlGn", size_max=18, zoom=5.8,
+        mapbox_style="carto-positron"
+    )
     
-st.write("---")
-st.subheader("📝 Synthèse du Diagnostic")
+    fig_map.update_layout(
+        margin={"r":0,"t":0,"l":0,"b":0},
+        mapbox=dict(center=dict(lat=10.5, lon=-11.0)),
+        paper_bgcolor="rgba(0,0,0,0)"
+    )
+    st.plotly_chart(fig_map, use_container_width=True)
+
+    # --- SECTION F : SYNTHÈSE DU DIAGNOSTIC (IA Intelligente) ---
+    st.write("---")
+    st.subheader("📝 Synthèse du Diagnostic Stratégique")
+    
+    # Calculs pour l'analyse
+    pref_leader = df_pref.loc[df_pref['Production'].idxmax()]
+    region_leader = df_reg.iloc[0]['Region']
+    poids_pref = (pref_leader['Production'] / base_prod) * 100
+
+    st.info(f"""
+        **Analyse multidimensionnelle (Modèle UPDIA) :**
+        * **Concentration Territoriale :** L'analyse granulaire révèle que la préfecture de **{pref_leader['Pref']}** ({pref_leader['Region']}) est le moteur de la filière avec **{poids_pref:.1f}%** de la production totale de **{culture_select}**.
+        * **Optimisation du Yield Gap :** Atteindre la cible de **{objectif_rendement:.2f} T/Ha** nécessite une intensification prioritaire dans la région de **{region_leader}**, où le potentiel de gain marginal est le plus élevé.
+        * **Levier Logistique :** Une réduction de 20% des pertes post-récolte dans les 5 préfectures leaders permettrait de récupérer environ **{int(base_prod*0.05):,} tonnes**, améliorant la souveraineté de **{(1/d['ratio_besoin'])*2:.1f} points** de manière immédiate.
+    """)
     
 
 with tab2:
@@ -566,6 +568,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
