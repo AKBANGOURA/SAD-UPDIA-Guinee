@@ -180,20 +180,6 @@ with tab1:
     # --- SECTION D : VISUALISATION ---
     c_left, c_right = st.columns(2)
 
-    with c_left:
-        st.write("**📍 Répartition par Région Administrative**")
-        fig_prod = px.bar(
-            df_reg, x='Region', y='Production', 
-            color='Production', color_continuous_scale='Greens',
-            text_auto='.2s'
-        )
-        fig_prod.update_layout(showlegend=False, coloraxis_showscale=False, margin=dict(t=0, b=0))
-        st.plotly_chart(fig_prod, use_container_width=True)
-
-    # --- LIGNES À MODIFIER DANS LA SECTION C (Analyse de l'Objectif 2040) ---
-
-with c_right:
-
     # --- SECTION E : CARTE DES 33 PRÉFECTURES ---
     st.write("---")
     st.subheader(f"📍 Carte de l'Efficacité Territoriale : {culture_select} (33 Préfectures)")
@@ -210,6 +196,20 @@ with c_right:
         mapbox=dict(center=dict(lat=10.5, lon=-11.0))
     )
     st.plotly_chart(fig_map, use_container_width=True)
+
+    with c_left:
+        st.write("**📍 Répartition par Région Administrative**")
+        fig_prod = px.bar(
+            df_reg, x='Region', y='Production', 
+            color='Production', color_continuous_scale='Greens',
+            text_auto='.2s'
+        )
+        fig_prod.update_layout(showlegend=False, coloraxis_showscale=False, margin=dict(t=0, b=0))
+        st.plotly_chart(fig_prod, use_container_width=True)
+
+    # --- LIGNES À MODIFIER DANS LA SECTION C (Analyse de l'Objectif 2040) ---
+
+with c_right:
 
     st.write("**🎯 Analyse de l'Objectif 2040**")
     df_gap = pd.DataFrame({
@@ -592,6 +592,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
