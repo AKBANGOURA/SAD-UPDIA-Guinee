@@ -167,11 +167,11 @@ with c_right:
                          color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'})
         st.plotly_chart(fig_gap, use_container_width=True)
 
-    # --- SECTION E : CARTOGRAPHIE (Haute Visibilité) ---
+    # --- SECTION E : CARTOGRAPHIE (Focus Guinée) ---
 st.write("---")
 st.write("**📍 Cartographie de l'Efficacité Régionale**")
 
-# DataFrame des 8 régions administratives
+# On garde votre DataFrame avec les 8 régions
 df_map = pd.DataFrame({
     'Région': ['Boké', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labé', "N'Zérékoré", 'Conakry'],
     'Efficacité (%)': [82, 78, 65, 88, 92, 70, 85, 40],
@@ -187,27 +187,40 @@ fig_map = px.scatter_mapbox(
     size="Efficacité (%)",
     hover_name="Région", 
     color_continuous_scale="RdYlGn",
-    size_max=25, 
+    size_max=20, 
     zoom=5.8, 
-    mapbox_style="carto-darkmatter" # <--- Rend l'extérieur sombre
+    mapbox_style="carto-positron" # Base claire pour la Guinée
 )
 
-# Configuration avancée des frontières et du centrage
+# --- APPLICATION DE L'EFFET "PROJECTEUR" ---
 fig_map.update_layout(
     margin={"r":0,"t":0,"l":0,"b":0},
     mapbox=dict(
         center=dict(lat=10.5, lon=-11.0),
-        layers=[]
+        # On peut ajouter ici un calque personnalisé si on a un GeoJSON, 
+        # sinon on joue sur les paramètres geos :
     )
 )
 
-# Rendre les frontières nationales visibles
 fig_map.update_geos(
+    visible=True,
+    resolution=50,
     showcountries=True, 
-    countrycolor="white", # Frontière blanche pour trancher sur le fond noir
-    showcoastlines=True, 
-    coastlinecolor="white"
+    countrycolor="#222222", # Frontières sombres
+    showland=True, 
+    landcolor="white",      # Fond de la Guinée clair
+    showocean=True, 
+    oceancolor="#1a1a1a",   # Océan très sombre
+    showlakes=True, 
+    lakecolor="#1a1a1a",
+    # On assombrit les territoires hors-Guinée en utilisant le fond de carte
+    bgcolor="#1a1a1a" 
 )
+
+# Note : Pour un rendu parfait "Guinée Claire / Voisins Noirs", 
+# le style 'stamen-toner' ou un style Mapbox personnalisé est idéal.
+# Ici, on optimise avec les outils standards :
+fig_map.update_mapboxes(style="carto-darkmatter", opacity=0.8)
 
 st.plotly_chart(fig_map, use_container_width=True)
 
@@ -504,6 +517,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
