@@ -230,17 +230,24 @@ st.subheader("📝 Synthèse du Diagnostic")
     
 
 with tab2:
-    st.subheader(f"Simulateur Agro-Climatique Avancé : {culture_select}")
+    st.subheader(f"📊 Simulateur Agro-Climatique Avancé : {culture_select}")
     
     col_a, col_b = st.columns([1, 2])
     
     with col_a:
         st.write("**🌍 Caractéristiques du Terroir**")
-        type_sol = st.selectbox("Type de Sol", ["Alluvial (Fertile)", "Latéritique (Ferralitique)", "Sableux/Limoneux"], 
-                               help="Le type de sol influence la rétention d'eau et la réponse aux intrants.")
+        type_sol = st.selectbox(
+            "Type de Sol", 
+            ["Alluvial (Fertile)", "Latéritique (Ferralitique)", "Sableux/Limoneux"], 
+            help="Le type de sol influence la rétention d'eau et la réponse aux intrants."
+        )
         
         st.write("**⚙️ Configuration Technique**")
-        intrants = st.select_slider("Niveau d'intensification", options=["Traditionnel", "Semi-Mécanisé", "Intensif"], key="ia_tech")
+        intrants = st.select_slider(
+            "Niveau d'intensification", 
+            options=["Traditionnel", "Semi-Mécanisé", "Intensif"], 
+            key="ia_tech"
+        )
         irrigation = st.checkbox("Irrigation Maîtrisée", help="Essentiel pour sécuriser le rendement face aux aléas.")
         
         st.write("---")
@@ -255,7 +262,8 @@ with tab2:
         boost_base = {"Traditionnel": 1.0, "Semi-Mécanisé": 1.4, "Intensif": 1.9}[intrants] * f_sol
         
         def calculer_rendement_complet(v_pluie, irrig, b_base, s_type):
-            if irrig: b_base += 0.3 # Bonus fixe irrigation
+            if irrig: 
+                b_base += 0.3 # Bonus fixe irrigation
             
             impact = v_pluie / 100
             # Sensibilité selon le sol (Sableux = très sensible au manque d'eau)
@@ -268,18 +276,22 @@ with tab2:
                     impact = impact * sens_sol # Impact aggravé par la nature du sol
             return max(0.1, b_base + impact)
 
+        # Calcul des résultats basés sur la sélection dynamique
         rendement_final = calculer_rendement_complet(meteo_actuelle, irrigation, boost_base, type_sol)
         prod_simulee = base_prod * rendement_final
 
-        st.metric(f"Production {culture_select} Projetée", f"{int(prod_simulee):,} T", 
-                  f"{int((rendement_final-1)*100)}% vs Actuel")
+        st.metric(
+            f"Production {culture_select} Projetée", 
+            f"{int(prod_simulee):,} T", 
+            f"{int((rendement_final-1)*100)}% vs Actuel"
+        )
 
         # --- GESTION DES ALERTES CRITIQUES ---
         if meteo_actuelle < -20 and not irrigation:
-            st.error(f"🚨 **ALERTE SÉCHERESSE** : Sans irrigation sur sol {type_sol}, la production de {culture_select} s'effondre malgré les intrants.")
+            st.error(f"🚨 **ALERTE SÉCHERESSE** : Sans irrigation sur sol {type_sol}, la production de {culture_select} s'effondre.")
         
         if meteo_actuelle > 30:
-            st.warning("🌊 **RISQUE D'INONDATION** : Un excès de pluie peut saturer les sols et détruire les cultures.")
+            st.warning("🌊 **RISQUE D'INONDATION** : Un excès de pluie peut saturer les sols et détruire les récoltes.")
 
     with col_b:
         # 1. GRAPHIQUE DE COMPARAISON (REMIS À JOUR)
@@ -297,55 +309,50 @@ with tab2:
         rendements_courbe = [base_prod * calculer_rendement_complet(p, irrigation, boost_base, type_sol) for p in pluie_range]
         
         df_sens = pd.DataFrame({'Pluie (%)': pluie_range, 'Production (T)': rendements_courbe})
-        fig_sens = px.line(df_sens, x='Pluie (%)', y='Production (T)', 
-                           title=f"Courbe de Résilience : Impact de la Pluie sur Sol {type_sol}",
-                           markers=True)
+        fig_sens = px.line(
+            df_sens, x='Pluie (%)', y='Production (T)', 
+            title=f"Courbe de Résilience : Impact de la Pluie sur Sol {type_sol}",
+            markers=True
+        )
         fig_sens.add_vline(x=meteo_actuelle, line_dash="dot", line_color="red", annotation_text="Position Curseur")
         fig_sens.add_hline(y=base_prod, line_dash="dash", line_color="orange", annotation_text="Seuil Actuel")
         
         st.plotly_chart(fig_sens, use_container_width=True)
-    st.success(f"**Synthèse IA :** L'interaction entre le sol **{type_sol}** et une variation pluviométrique de **{meteo_actuelle}%** donne un rendement de **{rendement_final:.2f} T/Ha** (équivalent).")
-st.write("---")
-st.subheader("📡 Anticipation des Crises (Imagerie Satellite & NDVI)")
 
-col_s1, col_s2 = st.columns([1, 2])
+    st.success(f"**Synthèse IA :** L'interaction entre le sol **{type_sol}** et une variation pluviométrique de **{meteo_actuelle}%** donne un rendement équivalent de **{(rendement_moyen * rendement_final):.2f} T/Ha**.")
 
-with col_s1:
-    st.write("**Analyse Sentinel-2 (Simulation)**")
-    # Simulation d'un indice NDVI (0.0 à 1.0)
-    ndvi_obs = st.slider("Indice de Végétation observé (NDVI)", 0.1, 0.9, 0.5, 
-                         help="Un NDVI < 0.4 indique souvent un stress hydrique ou une anomalie de croissance.")
-    
-    # Logique d'anticipation
-    seuil_alerte = 0.45
-    alerte_crise = ndvi_obs < seuil_alerte
-    
-    if alerte_crise:
-        st.error(f"🚨 **ALERTE PRÉCOCE** : Le NDVI est anormalement bas ({ndvi_obs}). Risque de crise alimentaire détecté pour le {culture_select}.")
-    else:
-        st.success(f"✅ **Vigueur Optimale** : Le couvert végétal ({ndvi_obs}) est conforme aux moyennes saisonnières.")
+    st.write("---")
+    st.subheader("📡 Anticipation des Crises (Imagerie Satellite & NDVI)")
 
-with col_s2:
-    # Graphique de tendance satellite (Simulé sur les 6 derniers mois)
-    mois = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin"]
-    # On génère une courbe qui finit par la valeur du slider
-    tendance_ndvi = [0.3, 0.35, 0.42, 0.48, 0.52, ndvi_obs]
-    
-    fig_satellite = px.area(x=mois, y=tendance_ndvi, 
-                            title=f"Suivi Satellite NDVI (Tendance 6 mois) - {culture_select}",
-                            labels={'x': 'Mois', 'y': 'Indice NDVI'},
-                            color_discrete_sequence=['#1e4d2b'])
-    
-    # Zone d'alerte rouge
-    fig_satellite.add_hrect(y0=0.1, y1=0.4, line_width=0, fillcolor="red", opacity=0.2, annotation_text="ZONE DE CRISE")
-    
-    st.plotly_chart(fig_satellite, use_container_width=True)
+    col_s1, col_s2 = st.columns([1, 2])
 
-st.info(f"""
-**Note Scientifique :** Ce module simule l'intégration de données multispectrales. 
-En cas de NDVI < {seuil_alerte}, le modèle UPDIA recommande l'activation immédiate des stocks de sécurité 
-et une aide d'urgence pour la filière **{culture_select}**.
-""")
+    with col_s1:
+        st.write("**Analyse Sentinel-2 (Simulation)**")
+        ndvi_obs = st.slider(
+            "Indice de Végétation observé (NDVI)", 0.1, 0.9, 0.5, 
+            help="Un NDVI < 0.4 indique un stress hydrique ou une anomalie de croissance."
+        )
+        
+        seuil_alerte = 0.45
+        if ndvi_obs < seuil_alerte:
+            st.error(f"🚨 **ALERTE PRÉCOCE** : NDVI bas ({ndvi_obs}). Risque de crise détecté pour le {culture_select}.")
+        else:
+            st.success(f"✅ **Vigueur Optimale** : Le couvert végétal ({ndvi_obs}) est sain.")
+
+    with col_s2:
+        mois = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin"]
+        tendance_ndvi = [0.3, 0.35, 0.42, 0.48, 0.52, ndvi_obs]
+        
+        fig_satellite = px.area(
+            x=mois, y=tendance_ndvi, 
+            title=f"Suivi Satellite NDVI (Tendance 6 mois) - {culture_select}",
+            labels={'x': 'Mois', 'y': 'Indice NDVI'},
+            color_discrete_sequence=['#1e4d2b']
+        )
+        fig_satellite.add_hrect(y0=0.1, y1=0.4, line_width=0, fillcolor="red", opacity=0.2, annotation_text="ZONE DE CRISE")
+        st.plotly_chart(fig_satellite, use_container_width=True)
+
+    st.info(f"**Note Scientifique :** En cas de NDVI < {seuil_alerte}, le modèle UPDIA recommande l'activation des stocks de sécurité pour la filière **{culture_select}**.")
 
 with tab3:
     st.subheader(f"🎯 Trajectoire de Souveraineté 2026-2040 : {culture_select}")
@@ -516,6 +523,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
