@@ -80,22 +80,19 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 with tab1:
     st.subheader(f"📊 Analyse Complète de la Production : {culture_select}")
     
-    # --- SECTION A : TES MÉTRIQUES D'ORIGINE (Tous les indicateurs) ---
+    # --- SECTION A : MÉTRIQUES D'ORIGINE ---
     m1, m2, m3 = st.columns(3)
-    # On utilise d['obj_2040'] pour que ça change avec la culture choisie
     m1.metric(f"Production {culture_select}", f"{base_prod:,} T", "+4.2%")
     m2.metric("Objectif National", f"{d['obj_2040']:,} T", "Cible 2040")
     
-    # Calcul dynamique du besoin importé (Basé sur ton ratio_besoin)
     besoin_import_calc = int((d['ratio_besoin'] - 1) * 100)
     m3.metric("Besoin Importé", f"{besoin_import_calc}%", "-2.1%")
 
     st.write("---")
 
-    # --- SECTION B : ANALYSE DES RENDEMENTS & GAP (Nouveaux indicateurs PhD) ---
+    # --- SECTION B : ANALYSE DES RENDEMENTS & GAP ---
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
     
-    # Calcul du rendement moyen (Production / Ha estimé)
     rendement_moyen = base_prod / 800000 
     objectif_rendement = d['obj_2040'] / 800000
     gap_rendement = ((objectif_rendement - rendement_moyen) / rendement_moyen) * 100
@@ -106,66 +103,59 @@ with tab1:
 
     st.write("---")
 
-    # --- SECTION C : VISUALISATION (Fusion des deux types de graphiques) ---
+    # --- SECTION C : VISUALISATION DYNAMIQUE ---
     c_left, c_right = st.columns(2)
     
-with c_left:
-        st.write("**📍 Répartition par Région Administrative**")
-        df_reg = pd.DataFrame({
-            'Région': ['Boké', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labé', "N'Zérékoré", 'Conakry'],
-            'Production': [
-                base_prod*0.12, base_prod*0.15, base_prod*0.08, 
-                base_prod*0.15, base_prod*0.25, base_prod*0.10, 
-                base_prod*0.14, base_prod*0.01
-            ]
-        })
-        
-        # On trie les données pour que la dégradation soit fluide
-        df_reg = df_reg.sort_values(by='Production', ascending=False)
+    # ÉTAPE CLÉ : On lie les données de l'histogramme aux potentiels de la culture choisie
+    # Cela évite le décalage avec la carte
+    p_map = potentiels_regionaux.get(culture_select, potentiels_regionaux['Tout'])
+    
+    df_reg = pd.DataFrame({
+        'Région': list(p_map.keys()),
+        'Production': [v * base_prod for v in p_map.values()]
+    }).sort_values(by='Production', ascending=False)
 
+    with c_left:
+        st.write("**📍 Répartition par Région Administrative**")
         fig_prod = px.bar(
             df_reg, 
             x='Région', 
             y='Production', 
-            color='Production', # On colore selon la valeur pour la dégradation
-            color_continuous_scale='Greens', # Dégradation du clair au foncé
-            text_auto='.2s', # Affiche les quantités au sommet (ex: 140k)
+            color='Production',
+            color_continuous_scale='Greens',
+            text_auto='.2s',
         )
-
-        # Amélioration du style et positionnement du texte
         fig_prod.update_traces(textposition='outside', cliponaxis=False)
         fig_prod.update_layout(showlegend=False, coloraxis_showscale=False)
-        
         st.plotly_chart(fig_prod, use_container_width=True)
 
-    # --- ÉTAPE 1 : CALCULS DYNAMIQUES POUR LA SYNTHÈSE ---
-    # On trouve la ligne avec la production maximale
-idx_max = df_reg['Production'].idxmax()
-region_leader = df_reg.loc[idx_max, 'Région']
-part_production = (df_reg['Production'].max() / base_prod) * 100
-impact_import = 15 * (part_production / 40) # Calcul d'impact proportionnel
-
-    # --- ÉTAPE 2 : AFFICHAGE DE LA SYNTHÈSE CORRIGÉE ---
-st.write("---")
-st.subheader("📝 Synthèse du Diagnostic")
-    
-st.info(f"""
-        **Analyse Stratégique & Territoriale :**
-        * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%** par l'intensification technique.
-        * **Focus Régional :** La région de **{region_leader}** concentrant **{part_production:.0f}%** de la production, une hausse de rendement de **0.5 T/Ha** dans cette zone administrative réduirait les importations nationales de **{impact_import:.1f}%**.
-        """)
-with c_right:
-        # LE GRAPHIQUE D'ANALYSE DU GAP (Analyse de la structure du déficit)
+    with c_right:
         st.write("**🎯 Analyse de l'Objectif 2040**")
         df_gap = pd.DataFrame({
             'Indicateur': ['Production Actuelle', 'Déficit à combler'],
-            'Valeur': [base_prod, (d['obj_2040'] - base_prod)]
+            'Valeur': [base_prod, max(0, d['obj_2040'] - base_prod)]
         })
-        fig_gap = px.pie(df_gap, values='Valeur', names='Indicateur', 
-                         hole=0.4,
-                         color='Indicateur',
-                         color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'})
+        fig_gap = px.pie(
+            df_gap, values='Valeur', names='Indicateur', 
+            hole=0.4,
+            color='Indicateur',
+            color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'}
+        )
         st.plotly_chart(fig_gap, use_container_width=True)
+
+    # --- SECTION D : SYNTHÈSE (Indentation corrigée pour être hors des colonnes) ---
+    idx_max = df_reg['Production'].idxmax()
+    region_leader = df_reg.loc[idx_max, 'Région']
+    part_production = (df_reg['Production'].max() / base_prod) * 100
+    impact_import = 15 * (part_production / 40)
+
+    st.write("---")
+    st.subheader("📝 Synthèse du Diagnostic")
+    st.info(f"""
+        **Analyse Stratégique & Territoriale :**
+        * **Levier Principal :** Pour la filière **{culture_select}**, la priorité est la réduction du *Yield Gap* de **{gap_rendement:.1f}%**.
+        * **Focus Régional :** La région de **{region_leader}** concentrant **{part_production:.0f}%** de la production nationale, une hausse de rendement de **0.5 T/Ha** dans cette zone réduirait les importations de **{impact_import:.1f}%**.
+        """)
 
     # --- 1. DÉFINITION DES POTENTIELS RÉGIONAUX (À placer au début du code ou avant l'onglet) ---
 # Ces coefficients (0.1 à 1.4) simulent les aptitudes agro-climatiques réelles
@@ -519,6 +509,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
