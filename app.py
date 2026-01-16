@@ -106,23 +106,27 @@ with tab1:
 
     st.write("---")
 
-    # --- SECTION C : VISUALISATION (Adaptée aux régions administratives) ---
+    # --- SECTION C : VISUALISATION (Fusion des deux types de graphiques) ---
 c_left, c_right = st.columns(2)
 
 with c_left:
-    st.write("**📍 Répartition par Région Administrative**")
+    # REPARTITION PAR REGION ADMINISTRATIVE
+    st.write("**📍 Répartition Territoriale (Production)**")
     
-    # Distribution de la production simulée par région administrative
-    # Basé sur la liste officielle : Boke, Kindia, Mamou, Faranah, Kankan, Labe, N'Zerekore, Conakry
-    # Nous utilisons des clés simplifiées sans accent pour la compatibilité
-    pondération_prod = {
-        "Boke": 0.15, "Kindia": 0.20, "Mamou": 0.10, "Faranah": 0.15, 
-        "Kankan": 0.25, "Labe": 0.08, "N'Zerekore": 0.06, "Conakry": 0.01
-    }
-    
+    # Nous utilisons ici les 8 régions pour correspondre à la future carte
+    # Les pondérations simulent la part de production nationale
     df_reg = pd.DataFrame({
-        'Région': list(pondération_prod.keys()),
-        'Production': [base_prod * v for v in pondération_prod.values()]
+        'Région': ["Boke", "Kindia", "Mamou", "Faranah", "Kankan", "Labe", "N'Zerekore", "Conakry"],
+        'Production': [
+            base_prod * 0.15, # Boke
+            base_prod * 0.15, # Kindia
+            base_prod * 0.10, # Mamou
+            base_prod * 0.15, # Faranah
+            base_prod * 0.25, # Kankan
+            base_prod * 0.08, # Labe
+            base_prod * 0.11, # N'Zerekore
+            base_prod * 0.01  # Conakry
+        ]
     })
     
     fig_prod = px.bar(
@@ -134,13 +138,14 @@ with c_left:
         text_auto='.2s'
     )
     
+    # Ajustement pour la lisibilité
     fig_prod.update_layout(showlegend=False, xaxis_title=None)
     st.plotly_chart(fig_prod, use_container_width=True)
 
 with c_right:
+    # ANALYSE DE L'OBJECTIF 2040 (Inchangé pour la cohérence des calculs)
     st.write("**🎯 Analyse de l'Objectif Vision 2040**")
     
-    # Analyse de la structure du déficit national
     df_gap = pd.DataFrame({
         'Indicateur': ['Production Actuelle', 'Déficit à combler'],
         'Valeur': [base_prod, max(0, d['obj_2040'] - base_prod)]
@@ -522,6 +527,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
