@@ -506,16 +506,19 @@ with tab5:
     
     with col_t1:
         st.write("**🏗️ Infrastructures de Stockage**")
-        taux_perte = st.slider("Taux de pertes post-récolte actuel (%)", 5, 50, 30)
+        taux_perte = st.slider("Taux de pertes post-récolte actuel (%)", 5, 50, 30, help="Part de la récolte perdue par manque de silos ou de transport adéquat.")
         
         st.write("**⚙️ Capacité de Transformation**")
-        niveau_transfo = st.radio("Niveau d'industrialisation", 
-                                  ["Manuel (Faible)", "Artisanal (Moyen)", "Industriel (Élevé)"])
+        niveau_transfo = st.radio(
+            "Niveau d'industrialisation", 
+            ["Manuel (Faible)", "Artisanal (Moyen)", "Industriel (Élevé)"],
+            help="L'industrie permet de stabiliser les produits et de réduire le gaspillage."
+        )
         
-        # Logique de calcul du gain par la transformation
+        # Logique de calcul du gain par l'efficience industrielle
         gain_efficience = {"Manuel (Faible)": 0.05, "Artisanal (Moyen)": 0.15, "Industriel (Élevé)": 0.30}[niveau_transfo]
         
-        # Impact sur la disponibilité réelle
+        # Impact sur la disponibilité réelle basé sur base_prod
         perte_tonnes = base_prod * (taux_perte / 100)
         economie_perte = perte_tonnes * gain_efficience
         
@@ -525,35 +528,45 @@ with tab5:
     with col_t2:
         st.write("**📦 Flux de Valeur : Du Champ à l'Assiette**")
         
-        # Calcul des étapes
+        # Calcul de la disponibilité finale pour le graphique
         dispo_reelle = base_prod - perte_tonnes
         
+        # Construction du graphique Waterfall
         fig_valeur = go.Figure(go.Waterfall(
-            name = "Flux", 
+            name = "Flux de production", 
             orientation = "v",
             measure = ["relative", "relative", "total"],
             x = ["Production Champ", "Pertes Post-Récolte", "Disponible Final"],
             textposition = "outside",
-            text = [f"+{int(base_prod)}", f"-{int(perte_tonnes)}", f"={int(dispo_reelle)}"],
-            y = [base_prod, -perte_tonnes, 0], # Le 0 avec 'total' calcule la somme automatiquement
+            text = [f"+{int(base_prod):,} T", f"-{int(perte_tonnes):,} T", f"={int(dispo_reelle):,} T"],
+            y = [base_prod, -perte_tonnes, 0], # Le 0 avec 'total' déclenche le calcul automatique
             connector = {"line":{"color":"rgb(63, 63, 63)"}},
-            increasing = {"marker":{"color":"#009460"}}, # Vert
-            decreasing = {"marker":{"color":"#ce1126"}}, # Rouge
-            totals = {"marker":{"color":"#fcd116"}}      # Jaune
+            increasing = {"marker":{"color":"#009460"}}, # Vert Guinée
+            decreasing = {"marker":{"color":"#ce1126"}}, # Rouge Guinée
+            totals = {"marker":{"color":"#fcd116"}}      # Jaune Guinée
         ))
 
         fig_valeur.update_layout(
-            title = f"Analyse des Pertes : {culture_select}",
-            showlegend = False
+            title = f"Analyse des pertes et disponibilité : {culture_select}",
+            showlegend = False,
+            height = 450
         )
         
         st.plotly_chart(fig_valeur, use_container_width=True)
 
     st.write("---")
+    
+    # Calcul d'impact pour la note de synthèse
+    gain_potentiel_max = int(perte_tonnes * 0.5) # Simule une réduction de 50% des pertes
+    
     st.info(f"""
-    **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
-    la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
+    **💡 Analyse de la Valeur Ajoutée (Modèle UPDIA) :**
+    En investissant dans des silos modernes et des unités de transformation pour la filière **{culture_select}**, 
+    la Guinée pourrait récupérer environ **{gain_potentiel_max:,} tonnes** par an. 
+    
+    *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
