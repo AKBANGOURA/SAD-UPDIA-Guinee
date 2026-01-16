@@ -235,50 +235,65 @@ with tab1:
         * **Recommandation :** Cibler les zones affichées en jaune/rouge sur la carte pour une mise à niveau technique immédiate.
     """)
 
-    # --- SECTION : PLAN DE RATTRAPAGE TECHNIQUE (Adapté par Culture) ---
+    # --- SECTION : PLAN DE RATTRAPAGE TECHNIQUE & CHRONOGRAMME ---
     st.write("---")
-    st.subheader(f"🚀 Besoins Ressources pour l'Objectif 2040 : {culture_select}")
+    st.subheader(f"🚀 Stratégie de Rattrapage 2026 - 2040 : {culture_select}")
+    
+    # 1. Paramètres temporels
+    annee_actuelle = 2026
+    annee_cible = 2040
+    nombre_annees = annee_cible - annee_actuelle
     
     deficit_t = max(0, d['obj_2040'] - base_prod)
     
     if deficit_t > 0:
-        # 1. Définition des standards techniques par culture
-        # Ratios : (Semences kg/Ha, Engrais kg/Ha)
+        # 2. Calcul du Taux de Croissance Annuel Nécessaire (Formule du CAGR)
+        # Formule : [(Valeur Finale / Valeur Initiale)^(1 / n)] - 1
+        taux_croissance = ((d['obj_2040'] / base_prod) ** (1 / nombre_annees)) - 1
+        taux_pourcentage = taux_croissance * 100
+
+        # 3. Affichage du Chronogramme
+        c_time1, c_time2 = st.columns(2)
+        c_time1.metric("Horizon Temporel", f"{nombre_annees} ans", f"Cible {annee_cible}")
+        c_time2.metric("Taux de Croissance Annuel Requis", f"{taux_pourcentage:.2f} %", "par an", delta_color="inverse")
+
+        st.write("") # Espacement
+
+        # 4. Standards techniques par culture
         normes = {
             'Riz': {'semences': 60, 'engrais': 200, 'label': 'Riziculture intensive'},
             'Fonio': {'semences': 25, 'engrais': 50, 'label': 'Culture résiliente'},
             'Maïs': {'semences': 20, 'engrais': 250, 'label': 'Exigence azotée'},
-            'Cassave': {'semences': 1000, 'engrais': 100, 'label': 'Boutures/Ha'} # Pour la Cassave, on parle souvent en boutures
+            'Cassave': {'semences': 1000, 'engrais': 100, 'label': 'Boutures'}
         }
-        
-        # Récupération des paramètres ou valeurs par défaut
         tech = normes.get(culture_select, {'semences': 30, 'engrais': 150, 'label': 'Standard'})
         
         col_plan1, col_plan2, col_plan3 = st.columns(3)
-        
-        # 2. Calcul des besoins
-        # On calcule la surface nécessaire pour produire le déficit sur la base du rendement actuel
         ha_supp = deficit_t / rendement_moyen
-        
-        semences_totales = (ha_supp * tech['semences']) / 1000  # Converti en Tonnes
-        engrais_total = (ha_supp * tech['engrais']) / 1000     # Converti en Tonnes
+        semences_totales = (ha_supp * tech['semences']) / 1000
+        engrais_total = (ha_supp * tech['engrais']) / 1000
 
-        # 3. Affichage des métriques
-        col_plan1.metric("Terres à mobiliser", f"{ha_supp:,.0f} Ha", f"Type: {tech['label']}")
-        
-        unit_semence = "T de Boutures" if culture_select == "Cassave" else "T de Semences"
-        col_plan2.metric(f"Besoin {unit_semence}", f"{semences_totales:,.1f} T", f"{tech['semences']} kg/Ha")
-        
-        col_plan3.metric("Besoin Engrais (NPK)", f"{engrais_total:,.1f} T", f"{tech['engrais']} kg/Ha")
+        col_plan1.metric("Terres à mobiliser", f"{ha_supp:,.0f} Ha")
+        unit_s = "T de Boutures" if culture_select == "Cassave" else "T de Semences"
+        col_plan2.metric(f"Total {unit_s}", f"{semences_totales:,.1f} T")
+        col_plan3.metric("Total Engrais (NPK)", f"{engrais_total:,.1f} T")
 
-        # 4. Message d'orientation stratégique
+        # 5. Graphique de trajectoire théorique
+        annees_projection = list(range(annee_actuelle, annee_cible + 1))
+        prod_projection = [base_prod * ((1 + taux_croissance) ** (i - annee_actuelle)) for i in annees_projection]
+        
+        df_traj = pd.DataFrame({'Année': annees_projection, 'Production (T)': prod_projection})
+        fig_traj = px.line(df_traj, x='Année', y='Production (T)', 
+                          title=f"Trajectoire de Souveraineté Recommandée (+{taux_pourcentage:.1f}% / an)")
+        fig_traj.add_hline(y=d['obj_2040'], line_dash="dash", line_color="red", annotation_text="Objectif 2040")
+        st.plotly_chart(fig_traj, use_container_width=True)
+
         st.info(f"""
-            **Directives pour combler le déficit ({deficit_t:,.0f} T) :**
-            * **Option A (Expansion) :** Aménager **{ha_supp:,.0f} hectares** supplémentaires avec les rendements actuels.
-            * **Option B (Intensification) :** Augmenter le rendement de **{rendement_moyen:.2f} T/Ha** à **{objectif_rendement:.2f} T/Ha** sur les surfaces existantes pour économiser les terres.
+            **Verdict de l'Analyse :** Pour combler le déficit de **{deficit_t:,.0f} T** d'ici **{annee_cible}**, la filière **{culture_select}** doit maintenir une croissance soutenue de **{taux_pourcentage:.2f}% chaque année**. 
+            Cela nécessite un alignement strict entre l'extension des surfaces et l'amélioration des rendements.
         """)
     else:
-        st.success(f"✅ La production actuelle de {culture_select} couvre déjà les besoins théoriques de l'objectif 2040.")
+        st.success(f"✅ L'objectif 2040 pour le {culture_select} est sécurisé au rythme actuel.")
     # Exportation CSV
     export_df = df_pref[['Region', 'Pref', 'Production', 'Efficacité']].copy()
     csv = export_df.to_csv(index=False).encode('utf-8')
@@ -627,6 +642,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
