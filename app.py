@@ -198,7 +198,8 @@ with tab1:
         })
         fig_gap = px.pie(
             df_gap, values='Valeur', names='Indicateur', hole=0.4,
-            color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'}
+            color_discrete_map={'Production Actuelle': '#009460', # Vert Guinée
+            'Déficit à combler': '#ce1126'    # Rouge Guinée}
         )
         st.plotly_chart(fig_gap, use_container_width=True)
 
@@ -572,6 +573,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
