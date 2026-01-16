@@ -418,10 +418,11 @@ with tab3:
         gap_final = int(besoin_path[-1] - prod_path[-1])
         st.error(f"🚨 **DÉFICIT PRÉVU** : En 2041, un manque de **{gap_final:,} Tonnes** est à prévoir pour le {culture_select} avec un taux de {tx_croissance}%.")
         st.warning(f"La ration par habitant de **{int(dispo_hab[-1])} kg/an** restera sous le seuil critique de {seuil_fao} kg.")
+
 with tab4:
     st.subheader(f"💰 Optimisation du Budget National : {culture_select}")
     
-    # --- 1. CONFIGURATION BUDGÉTAIRE (Tes Sliders) ---
+    # --- 1. CONFIGURATION BUDGÉTAIRE (Calculs Dynamiques) ---
     c_fin1, c_fin2 = st.columns([1, 1])
     
     with c_fin1:
@@ -429,31 +430,38 @@ with tab4:
         # Utilisation du budget global défini en barre latérale
         s_sem = st.slider("Semences Certifiées (Rouge)", 0, int(budget_total), int(budget_total*0.3))
         s_eng = st.slider("Engrais & Intrants (Jaune)", 0, int(budget_total - s_sem), int(budget_total*0.4))
-        s_mac = budget_total - s_sem - s_eng
+        
+        # Le reste est alloué automatiquement à la mécanisation
+        s_mac = max(0, budget_total - s_sem - s_eng)
         
         st.info(f"Budget Mécanisation (Vert) : **{int(s_mac)} Mds GNF**")
         
         # --- CALCUL DU ROI AGRONOMIQUE ---
-        coef = d['coef_roi']
+        # On récupère le coefficient spécifique à la culture (ex: 850 pour le Riz)
+        coef = d.get('coef_roi', 500)
+        
         # L'impact est pondéré : l'engrais a un boost de 1.2, la machine de 0.8 sur le tonnage immédiat
         gain_tonnes = (s_sem * coef) + (s_eng * coef * 1.2) + (s_mac * coef * 0.8)
         
         st.metric("Gain de Production Estimé", f"+{int(gain_tonnes):,} T", delta="Impact Investissement")
 
     with c_fin2:
-        # --- 2. TON DISQUE AUX COULEURS NATIONALES (Conservé strictement) ---
+        # --- 2. GRAPHIQUE AUX COULEURS NATIONALES ---
         st.write("**Structure de l'Investissement**")
         df_pie = pd.DataFrame({
             'Levier': ['Semences', 'Engrais', 'Machines'], 
-            'V': [s_sem, s_eng, s_mac]
+            'Valeur': [s_sem, s_eng, s_mac]
         })
-        fig_pie = px.pie(df_pie, values='V', names='Levier', 
-                         color='Levier', 
-                         color_discrete_map={'Semences':'#ce1126','Engrais':'#fcd116','Machines':'#009460'},
-                         hole=0.3)
+        fig_pie = px.pie(
+            df_pie, values='Valeur', names='Levier', 
+            hole=0.4,
+            color='Levier', 
+            color_discrete_map={'Semences':'#ce1126','Engrais':'#fcd116','Machines':'#009460'}
+        )
+        fig_pie.update_layout(margin=dict(t=20, b=20, l=0, r=0))
         st.plotly_chart(fig_pie, use_container_width=True)
 
-    # --- 3. NOUVELLE ANALYSE : ÉCONOMIE DE DEVISES (Substitution) ---
+    # --- 3. ANALYSE MACRO-ÉCONOMIQUE ---
     st.write("---")
     st.subheader("🏦 Impact Macro-économique (Balance Commerciale)")
     
@@ -464,22 +472,31 @@ with tab4:
     economie_devises = gain_tonnes * prix_import_usd
     
     with col_eco1:
-        st.metric("Économie de Devises (USD)", f"${economie_devises:,.0f}", 
-                  help="Montant économisé en évitant l'importation de ces tonnes.")
+        st.metric(
+            "Économie de Devises (USD)", 
+            f"${economie_devises:,.0f}", 
+            help="Montant économisé en devises étrangères en produisant localement ces tonnes."
+        )
     
     with col_eco2:
-        # Taux de change moyen (USD/GNF) approx 8600
-        rentabilite_ratio = (economie_devises * 8600) / (budget_total * 1_000_000_000)
-        st.metric("Efficacité du GNF", f"{rentabilite_ratio:.2f}x", 
-                  help="Pour 1 GNF investi, combien de GNF de valeur importée sont économisés.")
+        # Taux de change (USD/GNF) approx 8600. Conversion du budget Mds en GNF unité.
+        valeur_gnf_economisee = economie_devises * 8600
+        investissement_gnf = budget_total * 1_000_000_000
+        rentabilite_ratio = valeur_gnf_economisee / investissement_gnf if investissement_gnf > 0 else 0
+        
+        st.metric(
+            "Efficacité du GNF", 
+            f"{rentabilite_ratio:.2f}x", 
+            help="Pour 1 GNF investi, combien de GNF de valeur d'importation sont économisés."
+        )
 
-    # --- 4. RÉSUMÉ FINANCIER FUSIONNÉ ---
+    # --- 4. RÉSUMÉ FINANCIER ---
     st.write("---")
     st.success(f"""
     **📌 Note de Synthèse Financière :**
-    * **Impact Productif :** L'allocation actuelle permet de générer un surplus de **{int(gain_tonnes):,} tonnes**.
-    * **Indépendance :** Cela représente une économie stratégique de **{economie_devises/1_000_000:.1f} millions de dollars** pour la Banque Centrale de Guinée.
-    * **Recommandation :** Le levier 'Engrais' présente actuellement le meilleur ratio coût/bénéfice pour la filière **{culture_select}**.
+    * **Impact Productif :** L'allocation de **{budget_total} Mds GNF** permet de générer un surplus de **{int(gain_tonnes):,} tonnes** de **{culture_select}**.
+    * **Indépendance :** Cela représente une économie de **{economie_devises/1_000_000:.1f} millions de dollars** pour la balance commerciale.
+    * **Efficacité :** Le levier 'Engrais' reste le plus performant à court terme pour maximiser le rendement de la filière **{culture_select}**.
     """)
 
 with tab5:
@@ -537,6 +554,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
