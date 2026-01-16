@@ -185,30 +185,6 @@ fig_map.update_geos(fitbounds="locations", visible=False)
 fig_map.update_layout(margin={"r":0,"t":0,"l":0,"b":0}, height=500)
 
 st.plotly_chart(fig_map, use_container_width=True)
-# 3. Calcul dynamique basé sur vos sliders (Culture + Budget)
-facteur_budget = budget_total / 2500
-filiere_ref = culture_select if culture_select in potentiels else 'Tout'
-
-data_map = []
-for r in regions_guinee:
-    score = potentiels[filiere_ref][r] * facteur_budget * 75
-    data_map.append({'Region_ID': r, 'Taux d\'efficacité': min(100, int(score))})
-
-df_map_final = pd.DataFrame(data_map)
-
-# 4. Création de la carte avec URL GeoJSON de secours
-geojson_url = "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/guinea/guinea-regions.json"
-
-fig_map = px.choropleth(
-    df_map_final,
-    geojson=geojson_url,
-    locations="Region_ID",           # Colonne du DataFrame
-    featureidkey="properties.NAME_1", # Clé interne du fichier GeoJSON
-    color="Taux d'efficacité",
-    color_continuous_scale="RdYlGn",
-    range_color=(40, 100),
-    hover_name="Region_ID"
-)
 
 # 5. Configuration de la vue (Focus sur la Guinée)
 fig_map.update_geos(
@@ -520,6 +496,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
