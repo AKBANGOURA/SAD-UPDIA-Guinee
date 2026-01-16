@@ -145,28 +145,64 @@ df_map = pd.DataFrame({
     'lon': [-13.5, -11.8, -9.5, -9.2]
 })
 
-# Création de la carte avec Plotly
-fig_map = px.scatter_mapbox(
-    df_map, 
-    lat="lat", 
-    lon="lon", 
-    color="Efficacité (%)", 
-    size="Efficacité (%)",
-    hover_name="Région", 
-    hover_data={"lat": False, "lon": False, "Efficacité (%)": True},
-    color_continuous_scale="RdYlGn", # Vert pour le succès, Rouge pour les zones à aider
-    size_max=30, 
-    zoom=5.5, 
-    mapbox_style="carto-positron"
+# --- SECTION D : CARTOGRAPHIE DYNAMIQUE DE L'EFFICACITÉ (CORRIGÉE) ---
+st.write("---")
+st.write("**📍 Cartographie de l'Efficacité Régionale (Dynamique)**")
+
+# 1. Définition des potentiels régionaux par filière (Coefficients PhD)
+# Ces coefficients simulent le rendement naturel de chaque zone pour chaque culture
+potentiels = {
+    'Riz': {'Boké': 1.2, 'Kindia': 1.1, 'Mamou': 0.7, 'Faranah': 1.3, 'Kankan': 1.2, 'Labé': 0.6, 'Nzérékoré': 1.1},
+    'Maïs': {'Boké': 0.8, 'Kindia': 0.9, 'Mamou': 1.1, 'Faranah': 1.2, 'Kankan': 1.1, 'Labé': 1.0, 'Nzérékoré': 1.3},
+    'Fonio': {'Boké': 0.6, 'Kindia': 0.7, 'Mamou': 1.3, 'Faranah': 1.1, 'Kankan': 0.9, 'Labé': 1.4, 'Nzérékoré': 0.7},
+    'Cassave': {'Boké': 1.2, 'Kindia': 1.2, 'Mamou': 0.8, 'Faranah': 0.9, 'Kankan': 0.8, 'Labé': 0.7, 'Nzérékoré': 1.4},
+    'Tout': {'Boké': 1.0, 'Kindia': 1.0, 'Mamou': 1.0, 'Faranah': 1.0, 'Kankan': 1.0, 'Labé': 1.0, 'Nzérékoré': 1.0}
+}
+
+# 2. Calcul du facteur d'investissement (lié au budget saisi en sidebar)
+# On considère que 2500 Mds GNF est la base (100%). Plus le budget monte, plus l'efficacité augmente.
+facteur_budget = budget_total / 2500
+
+# 3. Génération des scores dynamiques
+filiere_ref = culture_select if culture_select in potentiels else 'Tout'
+regions = ['Boké', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labé', 'Nzérékoré']
+
+scores_dynamiques = []
+for r in regions:
+    # Formule : Potentiel de la région * Facteur Budget * 75 (Score de base)
+    score = potentiels[filiere_ref][r] * facteur_budget * 75
+    scores_dynamiques.append(min(100, int(score))) # On plafonne à 100%
+
+df_map_dyn = pd.DataFrame({
+    'Région': regions,
+    'Efficacité (%)': scores_dynamiques
+})
+
+# 4. Affichage de la Carte Choroplèthe
+geojson_url = "https://raw.githubusercontent.com/deldersveld/topojson/master/countries/guinea/guinea-regions.json"
+
+fig_map = px.choropleth(
+    df_map_dyn,
+    geojson=geojson_url,
+    locations="Région",
+    featureidkey="properties.NAME_1",
+    color="Efficacité (%)",
+    color_continuous_scale="RdYlGn",
+    range_color=(40, 100), # Échelle visuelle stable
+    labels={'Efficacité (%)': 'Taux d\'éfficacité'},
+    hover_name="Région",
+    hover_data={'Efficacité (%)': True}
 )
 
-# Ajustement de la mise en page pour centrer sur la Guinée
+fig_map.update_geos(fitbounds="locations", visible=False)
 fig_map.update_layout(
     margin={"r":0,"t":0,"l":0,"b":0},
-    mapbox=dict(center=dict(lat=10.5, lon=-11.0))
+    height=550
 )
 
 st.plotly_chart(fig_map, use_container_width=True)
+
+st.caption(f"Note : La coloration simule l'impact d'un budget de {budget_total} Mds GNF sur les rendements spécifiques de la filière {culture_select}.")
 
 # ... (juste après ton graphique st.plotly_chart(fig_perf))
     
@@ -466,6 +502,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
