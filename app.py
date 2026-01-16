@@ -149,19 +149,34 @@ df_map = pd.DataFrame({
 st.write("---")
 st.write("**📍 Cartographie de l'Efficacité Régionale (Dynamique)**")
 
-# 1. Utilisation des noms de régions EXACTS du GeoJSON (Standard ISO)
-# Note : Les noms doivent correspondre à la propriété 'NAME_1' du GeoJSON
-regions_guinee = ['Boke', 'Kindia', 'Mamou', 'Faranah', 'Kankan', 'Labe', 'NZerekore']
+# --- 1. Utilisation des noms de régions EXACTS du GeoJSON (Standard ISO) ---
+# Note : Les guillemets doubles permettent d'inclure l'apostrophe dans N'Zerekore sans erreur.
+regions_guinee = ["Boke", "Kindia", "Mamou", "Faranah", "Kankan", "Labe", "N'Zerekore"]
 
-# 2. Dictionnaire de potentiels (ajusté aux noms sans accents pour éviter les bugs d'encodage)
+# --- 2. Dictionnaire de potentiels (ajusté aux noms standards du GeoJSON) ---
+# Ce dictionnaire lie la culture choisie au potentiel agronomique de chaque région administrative.
 potentiels = {
-    'Riz': {'Boke': 1.2, 'Kindia': 1.1, 'Mamou': 0.7, 'Faranah': 1.3, 'Kankan': 1.2, 'Labe': 0.6, "NZerekore": 1.1},
-    'Maïs': {'Boke': 0.8, 'Kindia': 0.9, 'Mamou': 1.1, 'Faranah': 1.2, 'Kankan': 1.1, 'Labe': 1.0, "NZerekore": 1.3},
-    'Fonio': {'Boke': 0.6, 'Kindia': 0.7, 'Mamou': 1.3, 'Faranah': 1.1, 'Kankan': 0.9, 'Labe': 1.4, "NZerekore": 0.7},
-    'Cassave': {'Boke': 1.2, 'Kindia': 1.2, 'Mamou': 0.8, 'Faranah': 0.9, 'Kankan': 0.8, 'Labe': 0.7, "NZerekore": 1.4},
-    'Tout': {'Boke': 1.0, 'Kindia': 1.0, 'Mamou': 1.0, 'Faranah': 1.0, 'Kankan': 1.0, 'Labe': 1.0, "NZerekore": 1.0}
+    'Riz': {
+        'Boke': 1.2, 'Kindia': 1.1, 'Mamou': 0.7, 'Faranah': 1.3, 
+        'Kankan': 1.2, 'Labe': 0.6, "N'Zerekore": 1.1
+    },
+    'Maïs': {
+        'Boke': 0.8, 'Kindia': 0.9, 'Mamou': 1.1, 'Faranah': 1.2, 
+        'Kankan': 1.1, 'Labe': 1.0, "N'Zerekore": 1.3
+    },
+    'Fonio': {
+        'Boke': 0.6, 'Kindia': 0.7, 'Mamou': 1.3, 'Faranah': 1.1, 
+        'Kankan': 0.9, 'Labe': 1.4, "N'Zerekore": 0.7
+    },
+    'Cassave': {
+        'Boke': 1.2, 'Kindia': 1.2, 'Mamou': 0.8, 'Faranah': 0.9, 
+        'Kankan': 0.8, 'Labe': 0.7, "N'Zerekore": 1.4
+    },
+    'Tout': {
+        'Boke': 1.0, 'Kindia': 1.0, 'Mamou': 1.0, 'Faranah': 1.0, 
+        'Kankan': 1.0, 'Labe': 1.0, "N'Zerekore": 1.0
+    }
 }
-
 # 3. Calcul dynamique basé sur vos sliders (Culture + Budget)
 facteur_budget = budget_total / 2500
 filiere_ref = culture_select if culture_select in potentiels else 'Tout'
@@ -497,6 +512,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
