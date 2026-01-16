@@ -90,9 +90,9 @@ potentiels_regionaux = {
 # --- 2. CODE DU TAB 1 ---
 
 with tab1:
-    st.subheader(f"📊 Analyse Complète de la Production : {culture_select}")
+    st.subheader(f"📊 Analyse Territoriale de la Production : {culture_select}")
     
-    # --- SECTION A : MÉTRIQUES (Paramètres d'origine conservés) ---
+    # --- SECTION A : MÉTRIQUES DE PERFORMANCE (Origine) ---
     m1, m2, m3 = st.columns(3)
     m1.metric(f"Production {culture_select}", f"{base_prod:,} T", "+4.2%")
     m2.metric("Objectif National", f"{d['obj_2040']:,} T", "Cible 2040")
@@ -101,7 +101,7 @@ with tab1:
 
     st.write("---")
 
-    # --- SECTION B : RENDEMENTS & GAP (Structure d'origine conservée) ---
+    # --- SECTION B : RENDEMENTS & GAP (Origine) ---
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
     rendement_moyen = base_prod / 800000 
     objectif_rendement = d['obj_2040'] / 800000
@@ -111,10 +111,7 @@ with tab1:
     col_kpi2.metric("Yield Gap (Écart)", f"{gap_rendement:.1f}%", delta=f"{objectif_rendement:.2f} visé", delta_color="inverse")
     col_kpi3.metric("Souveraineté Actuelle", f"{(1/d['ratio_besoin'])*100:.1f}%")
 
-    st.write("---")
-
-    # --- SECTION C : LOGIQUE DE SPÉCIALISATION RÉGIONALE (Réalité Guinéenne) ---
-    # Liste exhaustive des 33 préfectures avec coordonnées
+    # --- SECTION C : LOGIQUE DE SPÉCIALISATION (33 Préfectures) ---
     prefectures_base = [
         {'Region': 'Boké', 'Pref': 'Boké', 'lat': 11.05, 'lon': -14.28},
         {'Region': 'Boké', 'Pref': 'Boffa', 'lat': 10.17, 'lon': -14.03},
@@ -152,35 +149,22 @@ with tab1:
         {'Region': 'Conakry', 'Pref': 'Conakry', 'lat': 9.53, 'lon': -13.67}
     ]
 
-    # Définition des zones de force par culture (Coefficients basés sur la réalité agro-climatique)
-    # Somme des poids approx 1.0 pour distribution cohérente
     if culture_select == 'Riz':
-        # Haute Guinée (Siguiri, Kankan) et Basse Guinée (Boké, Kindia) sont leaders
         poids_map = {'Kankan': 0.08, 'Boké': 0.05, 'Kindia': 0.04, 'N\'Zérékoré': 0.04, 'Faranah': 0.03, 'Labé': 0.01, 'Mamou': 0.01, 'Conakry': 0.005}
     elif culture_select == 'Fonio':
-        # Moyenne Guinée (Labé, Mamou) est le bastion historique
         poids_map = {'Labé': 0.12, 'Mamou': 0.09, 'Faranah': 0.05, 'Boké': 0.03, 'Kindia': 0.02, 'Kankan': 0.015, 'N\'Zérékoré': 0.01, 'Conakry': 0.005}
     elif culture_select == 'Cassave':
-        # Guinée Forestière (N'Zérékoré) et Basse Guinée dominent
         poids_map = {'N\'Zérékoré': 0.09, 'Kindia': 0.07, 'Boké': 0.06, 'Faranah': 0.04, 'Kankan': 0.02, 'Labé': 0.015, 'Mamou': 0.01, 'Conakry': 0.005}
-    else: # Maïs ou autres
+    else:
         poids_map = {'Faranah': 0.07, 'Kankan': 0.06, 'N\'Zérékoré': 0.05, 'Kindia': 0.04, 'Boké': 0.03, 'Labé': 0.02, 'Mamou': 0.02, 'Conakry': 0.005}
 
     df_pref = pd.DataFrame(prefectures_base)
     df_pref['poids'] = df_pref['Region'].map(poids_map).fillna(0.01)
-    
-    # Calcul de la production réelle par préfecture
     df_pref['Production'] = df_pref['poids'] * base_prod
-    # L'efficacité suit le poids mais avec une échelle 0-100 pour la carte
     df_pref['Efficacité'] = (df_pref['poids'] / df_pref['poids'].max()) * 100
-
-    # Agrégation par Région (pour le graphique à barres)
     df_reg = df_pref.groupby('Region')['Production'].sum().reset_index().sort_values('Production', ascending=False)
 
-    # --- SECTION D : VISUALISATION ---
-    c_left, c_right = st.columns(2)
-
-    # --- SECTION E : CARTE DES 33 PRÉFECTURES ---
+    # --- SECTION D : CARTE (Placée en haut pour visibilité maximale) ---
     st.write("---")
     st.subheader(f"📍 Carte de l'Efficacité Territoriale : {culture_select} (33 Préfectures)")
 
@@ -192,66 +176,55 @@ with tab1:
         mapbox_style="carto-positron"
     )
     fig_map.update_layout(
-        margin={"r":0,"t":0,"l":0,"b":0},
+        height=500, margin={"r":0,"t":0,"l":0,"b":0},
         mapbox=dict(center=dict(lat=10.5, lon=-11.0))
     )
     st.plotly_chart(fig_map, use_container_width=True)
 
+    st.write("---")
+
+    # --- SECTION E : GRAPHIQUES (Côte à côte) ---
+    c_left, c_right = st.columns(2)
+
     with c_left:
-        st.write("**📍 Répartition par Région Administrative**")
+        st.write("**📊 Répartition par Région Administrative**")
         fig_prod = px.bar(
             df_reg, x='Region', y='Production', 
             color='Production', color_continuous_scale='Greens',
             text_auto='.2s'
         )
-        fig_prod.update_layout(showlegend=False, coloraxis_showscale=False, margin=dict(t=0, b=0))
+        fig_prod.update_layout(height=350, showlegend=False, coloraxis_showscale=False, margin=dict(t=20, b=20))
         st.plotly_chart(fig_prod, use_container_width=True)
 
-    # --- LIGNES À MODIFIER DANS LA SECTION C (Analyse de l'Objectif 2040) ---
+    with c_right:
+        st.write("**🎯 Analyse de l'Objectif 2040**")
+        df_gap = pd.DataFrame({
+            'Indicateur': ['Production Actuelle', 'Déficit à combler'],
+            'Valeur': [base_prod, max(0, d['obj_2040'] - base_prod)]
+        })
+        fig_gap = px.pie(
+            df_gap, values='Valeur', names='Indicateur', hole=0.5,
+            color='Indicateur',
+            color_discrete_map={'Production Actuelle': '#009460', 'Déficit à combler': '#ce1126'}
+        )
+        fig_gap.update_layout(
+            height=350, margin=dict(t=20, b=20, l=0, r=0),
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5)
+        )
+        st.plotly_chart(fig_gap, use_container_width=True)
 
-with c_right:
-
-    st.write("**🎯 Analyse de l'Objectif 2040**")
-    df_gap = pd.DataFrame({
-        'Indicateur': ['Production Actuelle', 'Déficit à combler'],
-        'Valeur': [base_prod, max(0, d['obj_2040'] - base_prod)]
-    })
-    
-    fig_gap = px.pie(
-        df_gap, 
-        values='Valeur', 
-        names='Indicateur', 
-        hole=0.5, # Augmente le trou central pour plus d'élégance
-        color='Indicateur',
-        color_discrete_map={
-            'Production Actuelle': '#009460', # Vert
-            'Déficit à combler': '#ce1126'    # Rouge
-        }
-    )
-
-    # --- AJUSTEMENTS CRUCIAUX POUR ÉVITER LE MASQUAGE ---
-    fig_gap.update_layout(
-        height=350,  # Force une hauteur raisonnable
-        margin=dict(t=20, b=20, l=0, r=0), # Réduit les marges blanches autour
-        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5) # Légende horizontale en bas
-    )
-    
-    st.plotly_chart(fig_gap, use_container_width=True)
-
-    
-    # --- SECTION F : SYNTHÈSE DU DIAGNOSTIC INTELLIGENTE ---
+    # --- SECTION F : SYNTHÈSE DU DIAGNOSTIC ---
     st.write("---")
     st.subheader("📝 Synthèse du Diagnostic Stratégique")
-    
     pref_leader = df_pref.loc[df_pref['Production'].idxmax()]
     region_leader = df_reg.iloc[0]['Region']
     poids_pref_leader = (pref_leader['Production'] / base_prod) * 100
 
     st.info(f"""
         **Analyse Spécialisée (Modèle UPDIA) :**
-        * **Bastion de Production :** Pour la filière **{culture_select}**, la région de **{region_leader}** confirme son rôle de leader stratégique. À l'échelle locale, la préfecture de **{pref_leader['Pref']}** concentre à elle seule **{poids_pref_leader:.1f}%** de la production nationale.
-        * **Potentiel de Rendement :** L'écart de rendement (*Yield Gap*) de **{gap_rendement:.1f}%** indique une marge de progression massive. L'introduction de semences améliorées dans les zones "vertes" de la carte permettrait de réduire le besoin importé de façon drastique.
-        * **Recommandation :** Prioriser les investissements en mécanisation dans le cluster **{region_leader}** pour transformer ce potentiel agro-climatique en souveraineté alimentaire réelle.
+        * **Bastion de Production :** Pour la filière **{culture_select}**, la région de **{region_leader}** confirme son rôle de leader stratégique. La préfecture de **{pref_leader['Pref']}** concentre **{poids_pref_leader:.1f}%** de la production.
+        * **Potentiel de Rendement :** L'écart de rendement de **{gap_rendement:.1f}%** indique une marge de progression massive pour atteindre les objectifs 2040.
+        * **Recommandation :** Prioriser les investissements en mécanisation dans le cluster **{region_leader}** pour transformer ce potentiel en souveraineté alimentaire réelle.
     """)
     
 
@@ -592,6 +565,7 @@ with tab5:
     
     *Cela équivaut à nourrir **{(gain_potentiel_max * 1000 // d.get('seuil_fao', 50)):,.0f}** personnes supplémentaires sans augmenter les surfaces cultivées.*
     """)
+
 
 
 
