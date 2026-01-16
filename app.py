@@ -109,8 +109,6 @@ with tab1:
     # --- SECTION C : VISUALISATION (Fusion des deux types de graphiques) ---
     c_left, c_right = st.columns(2)
     
-    with c_left:
-    st.write("**📍 Répartition par Région Administrative**")
 with c_left:
         # VOTRE GRAPHIQUE RÉGIONAL MIS À JOUR (8 RÉGIONS)
         st.write("**📍 Répartition par Région Administrative**")
@@ -476,6 +474,7 @@ with tab5:
     **Analyse de la Valeur Ajoutée :** En réduisant les pertes post-récolte de moitié via des silos modernes et des unités de transformation, 
     la Guinée pourrait gagner l'équivalent de **{int(perte_tonnes/2):,} T** sans même planter un hectare de plus.
     """)
+
 
 
 
